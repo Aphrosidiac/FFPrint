@@ -1,0 +1,94 @@
+/* FF Print design tokens. Neutral, quiet, a tool rather than a brand piece.
+   Rules: whole-px type only (11/12/13/14/16/20), weights 400/500/600, one accent (blue) for primary
+   actions and selection, no gradients, no glass. Text never below 11px. */
+
+:root {
+  --font: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  --font-display: 'Segoe UI Variable Display', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --mono: 'Cascadia Mono', Consolas, ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --fs-11: 11px;
+  --fs-12: 12px;
+  --fs-13: 13px;
+  --fs-14: 14px;
+  --fs-16: 16px;
+  --fs-20: 20px;
+
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+
+  --r-sm: 4px;
+  --r: 6px;
+  --r-lg: 8px;
+
+  --control-h: 32px;
+  --control-h-sm: 28px;
+  --topbar-h: 40px;
+  --left-w: 264px;
+  --right-w: 340px;
+
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --dur: 120ms;
+
+  color-scheme: light;
+  --bg: #f4f4f5;
+  --surface: #ffffff;
+  --surface-2: #f7f7f8;
+  --surface-3: #efeff1;
+  --border: #e4e4e7;
+  --border-strong: #d4d4d8;
+  --text: #18181b;
+  --text-2: #52525b;
+  --text-3: #6b6b74;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-soft: #eef3fe;
+  --accent-text: #1d4ed8;
+  --on-accent: #ffffff;
+  --danger: #dc2626;
+  --danger-soft: #fef2f2;
+  --warning: #b45309;
+  --warning-soft: #fffbeb;
+  --success: #15803d;
+  --success-soft: #f0fdf4;
+  --focus: 0 0 0 2px var(--surface), 0 0 0 4px #93b4fd;
+  --shadow-pop: 0 4px 16px rgb(0 0 0 / 0.08), 0 1px 3px rgb(0 0 0 / 0.08);
+  --viewport-bg: #e8e9eb;
+  --bed: #d9dadd;
+  --bed-grid: #c4c6ca;
+  --bed-edge: #9ca0a6;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #141517;
+  --surface: #1c1d1f;
+  --surface-2: #232427;
+  --surface-3: #2b2c30;
+  --border: #2e2f33;
+  --border-strong: #3c3d42;
+  --text: #ececee;
+  --text-2: #a8a8b0;
+  --text-3: #8d8d96;
+  --accent: #3b82f6;
+  --accent-hover: #5b96f7;
+  --accent-soft: rgb(59 130 246 / 0.14);
+  --accent-text: #8fb3fb;
+  --on-accent: #ffffff;
+  --danger: #f05252;
+  --danger-soft: rgb(240 82 82 / 0.12);
+  --warning: #f0a33a;
+  --warning-soft: rgb(240 163 58 / 0.12);
+  --success: #3fb76a;
+  --success-soft: rgb(63 183 106 / 0.12);
+  --focus: 0 0 0 2px var(--surface), 0 0 0 4px #3b6fd1;
+  --shadow-pop: 0 6px 20px rgb(0 0 0 / 0.4), 0 1px 3px rgb(0 0 0 / 0.4);
+  --viewport-bg: #1a1b1e;
+  --bed: #2a2c30;
+  --bed-grid: #3a3c41;
+  --bed-edge: #5b5e64;
+}

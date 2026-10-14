@@ -1,0 +1,53 @@
+{
+  "name": "ff-print",
+  "productName": "FF Print",
+  "version": "0.1.0",
+  "description": "A slicer built for one printer: the Creality Ender-3 V3 SE.",
+  "main": "./out/main/index.js",
+  "author": {
+    "name": "FF Dev Studio",
+    "email": "hello@ffdev.studio",
+    "url": "https://ffdev.studio"
+  },
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "dev": "electron-vite dev",
+    "start": "electron-vite preview",
+    "fetch-engine": "node scripts/fetch-engine.mjs",
+    "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
+    "typecheck:web": "vue-tsc --noEmit -p tsconfig.web.json --composite false",
+    "typecheck": "pnpm typecheck:node && pnpm typecheck:web",
+    "test": "vitest run",
+    "build": "electron-vite build",
+    "build:unpack": "pnpm build && electron-builder --dir",
+    "build:win": "pnpm build && electron-builder --win"
+  },
+  "dependencies": {
+    "fflate": "^0.8.2",
+    "zod": "4"
+  },
+  "devDependencies": {
+    "@electron-toolkit/tsconfig": "2",
+    "@types/node": "24",
+    "@types/three": "^0.180.0",
+    "@vitejs/plugin-vue": "6",
+    "electron": "44.7.0",
+    "electron-builder": "26",
+    "electron-vite": "5",
+    "lucide-vue-next": "^1.0.0",
+    "playwright-core": "1.64.0",
+    "three": "^0.180.0",
+    "typescript": "5.9",
+    "vite": "7",
+    "vitest": "3",
+    "vue": "3.5",
+    "vue-tsc": "3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "electron",
+      "esbuild"
+    ]
+  }
+}
