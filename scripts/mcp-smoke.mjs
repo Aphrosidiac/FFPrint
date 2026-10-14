@@ -35,12 +35,12 @@ try {
 
   const opened = await call(client, 'open_models', { paths: [resolve('tests/fixtures/cube20.stl')] })
   const id = opened.added[0].id
-  console.log('- opened', opened.added[0].name, opened.added[0].sizeMm)
+  console.log('- opened', opened.added[0].name, opened.added[0].size)
   await call(client, 'move_object', { id, x: 60, y: 70 })
   const rot = await call(client, 'rotate_object', { id, rotation: { z: 45 } })
   assert.equal(rot.rotation.z, 45)
   const sc = await call(client, 'scale_object', { id, sizeMm: { z: 30 } })
-  assert.ok(Math.abs(sc.sizeMm.z - 30) < 0.05)
+  assert.ok(Math.abs(sc.size.z - 30) < 0.05)
   await call(client, 'duplicate_objects', { ids: [id], count: 2 })
   const objs = await call(client, 'list_objects')
   assert.equal(objs.length, 3)

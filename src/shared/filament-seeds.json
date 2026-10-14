@@ -15,7 +15,7 @@
     "density": 1.24,
     "diameter": 1.75,
     "pricePerKg": 75,
-    "notes": "From Creality Print 7.3 preset \"Hyper PLA @Creality Ender-3 V3 SE 0.4 nozzle\".",
+    "notes": "",
     "source": {
       "preset": "Hyper PLA @Creality Ender-3 V3 SE 0.4 nozzle",
       "filament_type": "PLA",
@@ -39,7 +39,7 @@
     "density": 1.25,
     "diameter": 1.75,
     "pricePerKg": 75,
-    "notes": "From Creality Print 7.3 preset \"CR-PLA @Creality Ender-3 V3 SE 0.4 nozzle\".",
+    "notes": "",
     "source": {
       "preset": "CR-PLA @Creality Ender-3 V3 SE 0.4 nozzle",
       "filament_type": "PLA",
@@ -63,7 +63,7 @@
     "density": 1.25,
     "diameter": 1.75,
     "pricePerKg": 75,
-    "notes": "From Creality Print 7.3 preset \"Soleyin Ultra PLA @Creality Ender-3 V3 SE 0.4 nozzle\".",
+    "notes": "",
     "source": {
       "preset": "Soleyin Ultra PLA @Creality Ender-3 V3 SE 0.4 nozzle",
       "filament_type": "PLA",
@@ -87,7 +87,7 @@
     "density": 1.27,
     "diameter": 1.75,
     "pricePerKg": 75,
-    "notes": "From Creality Print 7.3 preset \"Generic PETG @Creality Ender-3 V3 SE 0.4 nozzle\".",
+    "notes": "",
     "source": {
       "preset": "Generic PETG @Creality Ender-3 V3 SE 0.4 nozzle",
       "filament_type": "PETG",
@@ -111,7 +111,7 @@
     "density": 1.25,
     "diameter": 1.75,
     "pricePerKg": 75,
-    "notes": "From Creality Print 7.3 preset \"Soleyin Basic PETG @Creality Ender-3 V3 SE 0.4 nozzle\".",
+    "notes": "",
     "source": {
       "preset": "Soleyin Basic PETG @Creality Ender-3 V3 SE 0.4 nozzle",
       "filament_type": "PETG",
@@ -135,7 +135,7 @@
     "density": 1.24,
     "diameter": 1.75,
     "pricePerKg": 75,
-    "notes": "From Creality Print 7.3 preset \"Generic TPU @Creality Ender-3 V3 SE 0.4 nozzle\".",
+    "notes": "",
     "source": {
       "preset": "Generic TPU @Creality Ender-3 V3 SE 0.4 nozzle",
       "filament_type": "TPU",
@@ -159,7 +159,7 @@
     "density": 1.21,
     "diameter": 1.75,
     "pricePerKg": 75,
-    "notes": "From Creality Print 7.3 preset \"Hyper L-W PLA @Creality Ender-3 V3 SE 0.4 nozzle\".",
+    "notes": "",
     "source": {
       "preset": "Hyper L-W PLA @Creality Ender-3 V3 SE 0.4 nozzle",
       "filament_type": "PLA",
@@ -183,7 +183,7 @@
     "density": 1.3,
     "diameter": 1.75,
     "pricePerKg": 75,
-    "notes": "From Creality Print 7.3 preset \"Hyper Luminous @Creality Ender-3 V3 SE 0.4 nozzle\".",
+    "notes": "",
     "source": {
       "preset": "Hyper Luminous @Creality Ender-3 V3 SE 0.4 nozzle",
       "filament_type": "PLA",
@@ -207,7 +207,7 @@
     "density": 1.25,
     "diameter": 1.75,
     "pricePerKg": 75,
-    "notes": "From Creality Print 7.3 preset \"Hyper Marble @Creality Ender-3 V3 SE 0.4 nozzle\".",
+    "notes": "",
     "source": {
       "preset": "Hyper Marble @Creality Ender-3 V3 SE 0.4 nozzle",
       "filament_type": "PLA",
@@ -231,7 +231,7 @@
     "density": 1.24,
     "diameter": 1.75,
     "pricePerKg": 75,
-    "notes": "From Creality Print 7.3 preset \"Hyper Stardust @Creality Ender-3 V3 SE 0.4 nozzle\".",
+    "notes": "",
     "source": {
       "preset": "Hyper Stardust @Creality Ender-3 V3 SE 0.4 nozzle",
       "filament_type": "PLA",

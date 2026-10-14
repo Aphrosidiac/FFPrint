@@ -110,7 +110,11 @@ export async function listDrives(): Promise<Drive[]> {
 export function saveToDrive(gcodePath: string, driveRoot: string, fileName: string): string {
   if (!existsSync(driveRoot)) throw new Error('The SD card is no longer connected.')
   const name = dedupeName(safeFileName(fileName), (n) => existsSync(join(driveRoot, n)))
-  const target = join(driveRoot, name)
+  return writeVerified(gcodePath, join(driveRoot, name), 'SD card')
+}
+
+/** Copy, flush to disk, and check size + first/last 64 KB. Used for the card and for "Save as". */
+export function writeVerified(gcodePath: string, target: string, where = 'destination'): string {
   const want = statSync(gcodePath).size
   try {
     copyFileSync(gcodePath, target)
@@ -122,9 +126,9 @@ export function saveToDrive(gcodePath: string, driveRoot: string, fileName: stri
     }
   } catch (e) {
     const code = (e as NodeJS.ErrnoException).code
-    if (code === 'ENOSPC') throw new Error('The SD card is full. Delete old files from it and try again.')
-    if (code === 'EROFS' || code === 'EPERM' || code === 'EACCES') throw new Error('The SD card is write-protected. Check the lock switch on the card or adapter.')
-    throw new Error(`Could not write to the SD card: ${(e as Error).message}`)
+    if (code === 'ENOSPC') throw new Error(`The ${where} is full. Delete old files from it and try again.`)
+    if (code === 'EROFS' || code === 'EPERM' || code === 'EACCES') throw new Error(`The ${where} is write-protected${where === 'SD card' ? '. Check the lock switch on the card or adapter.' : '.'}`)
+    throw new Error(`Could not write to the ${where}: ${(e as Error).message}`)
   }
   const got = statSync(target).size
   if (want !== got) throw new Error(`The copy on the card is incomplete (${got} of ${want} bytes). Try again or use another card.`)

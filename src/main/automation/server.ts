@@ -38,7 +38,7 @@ export function automationStatus(): AutomationConfig & { running: boolean; url: 
   const cfg = automationConfig()
   const port = activePort || cfg.port
   const url = `http://127.0.0.1:${port}/mcp`
-  return { ...cfg, running: !!server, url, command: `claude mcp add --transport http ff-print ${url} --header "Authorization: Bearer ${cfg.token}"` }
+  return { ...cfg, port, running: !!server, url, command: `claude mcp add --transport http ff-print ${url} --header "Authorization: Bearer ${cfg.token}"` }
 }
 
 const text = (v: unknown): Content[] => [{ type: 'text', text: typeof v === 'string' ? v : JSON.stringify(v, null, 2) }]

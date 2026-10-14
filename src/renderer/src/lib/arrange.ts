@@ -1,5 +1,5 @@
 // Footprint packing on the 220 x 220 bed. Shelf packing of world-space footprints (largest first),
-// centred as a block on the bed. Good enough for the handful of parts a V3 SE plate holds.
+// centred as a block on the bed (clear of the purge line on the left edge). Good enough for the handful of parts a V3 SE plate holds.
 
 import { MACHINE } from '@shared/machine'
 import { type SceneObject, worldBox } from '@/stores/scene'
@@ -33,7 +33,8 @@ export function arrange(objects: SceneObject[]): boolean {
   const totalW = Math.max(...placed.map((p) => p.x + p.item.w), 0)
   const totalD = y + shelf
   if (totalD > MACHINE.bed.y || totalW > usable) fits = false
-  const ox = MACHINE.purgeKeepout.xMax + 2 + (usable - totalW) / 2
+  // Centre the block on the bed, nudged right only as far as the purge-line keep-out needs.
+  const ox = Math.max(MACHINE.purgeKeepout.xMax + 2, (MACHINE.bed.x - totalW) / 2)
   const oy = (MACHINE.bed.y - totalD) / 2
   for (const p of placed) {
     p.item.o.position.x = ox + p.x + p.item.w / 2 - p.item.cx

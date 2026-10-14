@@ -3,41 +3,21 @@
 // Claude Code does is exactly what a click would do.
 
 import { toRaw } from 'vue'
-import { CATALOGUE, QUALITIES, STRENGTHS, SUPPORT_MODES, ADHESION_TYPES, applyStrength, settingsSummary } from '@shared/settings'
-import { CREALITY_TUNING } from '@shared/tuning'
+import { QUALITIES, STRENGTHS, SUPPORT_MODES, ADHESION_TYPES, settingsSummary } from '@shared/settings'
 import { MACHINE } from '@shared/machine'
-import type { Filament, MachineSettings, Prefs, PrintSettings } from '@shared/types'
+import type { Filament, MachineSettings, Prefs } from '@shared/types'
 import { api, errorText } from '@/lib/api'
-import { arrange } from '@/lib/arrange'
+import * as P from '@/preview/actions'
+import * as O from '@/stores/outputActions'
+import * as S from '@/stores/settingsActions'
+import * as V from '@/viewport/actions'
 import { app, cancelSlice, currentFilament, openPaths, recordJob, reprint, runSlice } from '@/stores/app'
-import {
-  addObject,
-  clearScene,
-  dropToBed,
-  issues,
-  meshes,
-  removeObjects,
-  scene,
-  select,
-  toProject,
-  touch,
-  worldBox,
-  type SceneObject
-} from '@/stores/scene'
+import { clearScene, meshes, scene, toProject, type SceneObject } from '@/stores/scene'
 
 type Args = Record<string, any>
 type Handler = (args: Args) => Promise<unknown> | unknown
 
-/** Optional hooks other modules register (camera, preview, lay-flat) so automation can reach them. */
-export const hooks: {
-  setCameraView?: (view: string) => void
-  layFlat?: (id: string, faceIndex?: number) => void
-  previewInfo?: () => unknown
-  setLayerRange?: (min?: number, max?: number) => unknown
-  setFeatureVisible?: (feature: string, visible: boolean) => unknown
-} = {}
 
-const r2 = (v: number): number => Math.round(v * 100) / 100
 const plain = <T,>(v: T): T => JSON.parse(JSON.stringify(toRaw(v)))
 
 function obj(id: string): SceneObject {
@@ -46,22 +26,6 @@ function obj(id: string): SceneObject {
   return o
 }
 
-function describeObject(o: SceneObject): unknown {
-  const b = worldBox(o)
-  return {
-    id: o.id,
-    name: o.name,
-    position: { x: r2(o.position.x), y: r2(o.position.y), z: r2(o.position.z) },
-    rotation: { x: r2(o.rotation.x), y: r2(o.rotation.y), z: r2(o.rotation.z) },
-    scalePercent: { x: r2(o.scale.x * 100), y: r2(o.scale.y * 100), z: r2(o.scale.z * 100) },
-    sizeMm: { x: r2(b.max.x - b.min.x), y: r2(b.max.y - b.min.y), z: r2(b.max.z - b.min.z) },
-    bounds: { min: { x: r2(b.min.x), y: r2(b.min.y), z: r2(b.min.z) }, max: { x: r2(b.max.x), y: r2(b.max.y), z: r2(b.max.z) } },
-    visible: o.visible,
-    selected: scene.selection.includes(o.id),
-    issues: issues(o),
-    triangles: meshes.get(o.meshId)?.triangles ?? 0
-  }
-}
 
 function sliceInfo(): unknown {
   const s = app.slice
@@ -72,27 +36,14 @@ async function waitForSlice(): Promise<void> {
   while (app.slice.status === 'slicing') await new Promise((r) => setTimeout(r, 100))
 }
 
-function setOverride(key: string, value: unknown): void {
-  const overrides = { ...app.settings.overrides }
-  if (value === null || value === undefined) delete overrides[key]
-  else overrides[key] = typeof value === 'boolean' ? (value ? '1' : '0') : String(value)
-  app.settings = { ...app.settings, overrides }
-}
 
-async function saveFilament(f: Partial<Filament> & { id?: string }): Promise<Filament> {
-  const base = (f.id && app.filaments.find((x) => x.id === f.id)) || app.filaments.find((x) => x.material === f.material) || app.filaments[0]
-  const next = { ...plain(base), ...f, id: f.id ?? '' } as Filament
-  if (!f.id) next.notes = f.notes ?? ''
-  app.filaments = await api.saveFilament(next)
-  return f.id ? (app.filaments.find((x) => x.id === f.id) as Filament) : app.filaments[app.filaments.length - 1]
-}
 
 const handlers: Record<string, Handler> = {
   // ---- app
   get_state: () => ({
     page: app.page,
     mode: app.mode,
-    objects: scene.objects.map(describeObject),
+    objects: V.listObjects(),
     selection: [...scene.selection],
     settings: { ...plain(app.settings), summary: settingsSummary(app.settings) },
     filament: currentFilament() ? plain(currentFilament()) : null,
@@ -108,14 +59,14 @@ const handlers: Record<string, Handler> = {
   },
   ui_eval: async ({ code }) => {
     const fn = new Function('ff', `return (async () => { ${code} })()`)
-    return plain(await fn({ app, scene, meshes, actions: handlers }))
+    return plain(await fn({ app, scene, meshes, actions: handlers, objects: V, settings: S, output: O, preview: P }))
   },
 
   // ---- files
   open_models: async ({ paths }) => {
     const before = new Set(scene.objects.map((o) => o.id))
     await openPaths(paths)
-    return { added: scene.objects.filter((o) => !before.has(o.id)).map(describeObject), total: scene.objects.length }
+    return { added: scene.objects.filter((o) => !before.has(o.id)).map((o) => V.objectInfo(o.id)), total: scene.objects.length }
   },
   save_project: async ({ path }) => {
     if (!scene.objects.length) throw new Error('The bed is empty.')
@@ -124,80 +75,50 @@ const handlers: Record<string, Handler> = {
   },
 
   // ---- objects
-  list_objects: () => scene.objects.map(describeObject),
+  list_objects: () => V.listObjects(),
   select_objects: ({ ids, additive }) => {
     for (const id of ids) obj(id)
-    select(ids, additive)
+    V.selectObjects(ids, additive)
     return { selection: [...scene.selection] }
   },
   move_object: ({ id, x, y, relative }) => {
-    const o = obj(id)
-    if (x !== undefined) o.position.x = relative ? o.position.x + x : x
-    if (y !== undefined) o.position.y = relative ? o.position.y + y : y
-    touch()
-    return describeObject(o)
+    obj(id)
+    V.moveObject(id, { x, y }, relative ? 'relative' : 'absolute')
+    return V.objectInfo(id)
   },
   rotate_object: ({ id, rotation, relative }) => {
-    const o = obj(id)
-    for (const k of ['x', 'y', 'z'] as const) if (rotation?.[k] !== undefined) o.rotation[k] = relative ? o.rotation[k] + rotation[k] : rotation[k]
-    dropToBed(o)
-    touch()
-    return describeObject(o)
+    obj(id)
+    V.rotateObject(id, rotation ?? {}, relative ? 'relative' : 'absolute')
+    return V.objectInfo(id)
   },
   scale_object: ({ id, percent, perAxisPercent, sizeMm, uniform }) => {
-    const o = obj(id)
-    if (percent !== undefined) o.scale = { x: percent / 100, y: percent / 100, z: percent / 100 }
-    if (perAxisPercent) for (const k of ['x', 'y', 'z'] as const) if (perAxisPercent[k] !== undefined) o.scale[k] = perAxisPercent[k] / 100
-    if (sizeMm) {
-      const b = worldBox(o)
-      const cur = { x: b.max.x - b.min.x, y: b.max.y - b.min.y, z: b.max.z - b.min.z }
-      const keys = (['x', 'y', 'z'] as const).filter((k) => sizeMm[k] !== undefined)
-      if (uniform !== false && keys.length === 1) {
-        const f = sizeMm[keys[0]] / cur[keys[0]]
-        o.scale = { x: o.scale.x * f, y: o.scale.y * f, z: o.scale.z * f }
-      } else for (const k of keys) o.scale[k] = o.scale[k] * (sizeMm[k] / cur[k])
-    }
-    dropToBed(o)
-    touch()
-    return describeObject(o)
+    obj(id)
+    V.scaleObject(id, { percent, axes: perAxisPercent, size: sizeMm, uniform })
+    return V.objectInfo(id)
   },
   lay_flat: ({ id, faceIndex }) => {
-    const o = obj(id)
-    if (!hooks.layFlat) throw new Error('Lay flat is not available yet.')
-    hooks.layFlat(id, faceIndex)
-    return describeObject(o)
+    obj(id)
+    if (faceIndex !== undefined) V.layFlatOnFace(id, faceIndex)
+    else V.layFlatAuto(id)
+    return V.objectInfo(id)
   },
   drop_to_bed: ({ ids }) => {
-    for (const id of ids) dropToBed(obj(id))
-    touch()
-    return ids.map((id: string) => describeObject(obj(id)))
+    for (const id of ids) obj(id)
+    V.dropToBed(ids)
+    return ids.map((id: string) => V.objectInfo(id))
   },
   centre_object: ({ id }) => {
-    const o = obj(id)
-    const b = worldBox(o)
-    o.position.x += MACHINE.bed.x / 2 - (b.min.x + b.max.x) / 2
-    o.position.y += MACHINE.bed.y / 2 - (b.min.y + b.max.y) / 2
-    touch()
-    return describeObject(o)
+    obj(id)
+    V.centreOnBed([id])
+    return V.objectInfo(id)
   },
   duplicate_objects: ({ ids, count }) => {
-    const created: SceneObject[] = []
-    for (const id of ids) {
-      const src = obj(id)
-      for (let i = 0; i < (count ?? 1); i++) {
-        const c = addObject(src.meshId, src.name)
-        c.rotation = { ...src.rotation }
-        c.scale = { ...src.scale }
-        c.position.z = src.position.z
-        created.push(c)
-      }
-    }
-    const fits = arrange(scene.objects)
-    touch()
-    return { created: created.map(describeObject), fits }
+    for (const id of ids) obj(id)
+    const created = V.duplicateObjects(ids, count ?? 1)
+    return { created: created.map((id) => V.objectInfo(id)), total: scene.objects.length }
   },
   remove_objects: ({ ids }) => {
-    removeObjects(ids)
+    V.deleteObjects(ids)
     return { remaining: scene.objects.length }
   },
   clear_bed: () => {
@@ -205,24 +126,20 @@ const handlers: Record<string, Handler> = {
     return { remaining: 0 }
   },
   rename_object: ({ id, name }) => {
-    obj(id).name = name
-    touch()
-    return describeObject(obj(id))
+    obj(id)
+    V.renameObject(id, name)
+    return V.objectInfo(id)
   },
   set_object_visible: ({ id, visible }) => {
-    obj(id).visible = visible
-    touch()
-    return describeObject(obj(id))
+    obj(id)
+    V.setVisible(id, visible)
+    return V.objectInfo(id)
   },
-  arrange_all: () => {
-    const fits = arrange(scene.objects)
-    touch()
-    return { fits, objects: scene.objects.map(describeObject) }
-  },
+  arrange_all: () => ({ fits: V.arrangeAll(), objects: V.listObjects() }),
   set_camera_view: ({ view }) => {
-    if (!hooks.setCameraView) throw new Error('The 3D view is not ready.')
-    hooks.setCameraView(view)
-    return { view }
+    if (app.mode === 'preview' && ['iso', 'top', 'front', 'fit'].includes(view)) P.setPreviewView(view)
+    else V.setCameraView(view)
+    return { view, mode: app.mode }
   },
 
   // ---- settings
@@ -233,75 +150,67 @@ const handlers: Record<string, Handler> = {
       supports: { value: app.settings.supports, angle: app.settings.supportAngle, buildPlateOnly: app.settings.supportBuildPlateOnly, options: SUPPORT_MODES },
       adhesion: { value: app.settings.adhesion, brimWidth: app.settings.brimWidth, options: ADHESION_TYPES }
     },
-    advanced: CATALOGUE.map((d) => ({
-      key: d.key,
-      group: d.group,
-      label: d.label,
-      help: d.help,
-      kind: d.kind,
-      unit: d.unit,
-      min: d.min,
-      max: d.max,
-      options: d.options,
-      value: app.settings.overrides[d.key] ?? null,
-      baseline: CREALITY_TUNING[d.key] ?? null
-    })),
-    note: 'value null = FF Print default (Orca V3 SE preset + Creality tuning in `baseline`).'
+    advanced: plain(S.listSettings())
   }),
   set_print_settings: (a) => {
-    let s: PrintSettings = { ...app.settings }
-    if (a.strength) s = applyStrength(s, a.strength)
-    for (const k of ['quality', 'walls', 'infill', 'infillPattern', 'topLayers', 'bottomLayers', 'supports', 'supportAngle', 'supportBuildPlateOnly', 'adhesion', 'brimWidth'] as const) {
-      if (a[k] !== undefined) (s as unknown as Args)[k] = a[k]
-    }
-    app.settings = s
+    if (a.quality) S.setQuality(a.quality)
+    if (a.strength) S.setStrength(a.strength)
+    const nums = { walls: a.walls, topLayers: a.topLayers, bottomLayers: a.bottomLayers, infill: a.infill, pattern: a.infillPattern }
+    if (Object.values(nums).some((v) => v !== undefined)) S.setStrengthNumbers(nums)
+    if (a.supports || a.supportAngle !== undefined || a.supportBuildPlateOnly !== undefined) S.setSupports(a.supports ?? app.settings.supports, { angle: a.supportAngle, buildPlateOnly: a.supportBuildPlateOnly })
+    if (a.adhesion || a.brimWidth !== undefined) S.setAdhesion(a.adhesion ?? app.settings.adhesion, a.brimWidth)
     return { settings: plain(app.settings), summary: settingsSummary(app.settings) }
   },
   set_setting: ({ key, value }) => {
-    setOverride(key, value)
-    return { key, value: app.settings.overrides[key] ?? null, known: CATALOGUE.some((d) => d.key === key) }
+    if (value === null || value === undefined) S.resetOverride(key)
+    else S.setOverride(key, value)
+    const stored = app.settings.overrides[key]
+    return { key, value: stored ?? null, note: stored === undefined ? 'Equal to the default, so nothing is overridden.' : undefined }
   },
   reset_settings: ({ keys }) => {
-    if (!keys) app.settings = { ...app.settings, overrides: {} }
-    else for (const k of keys) setOverride(k, null)
+    if (!keys) S.resetAllOverrides()
+    else for (const k of keys) S.resetOverride(k)
     return { overrides: plain(app.settings.overrides) }
   },
-  list_setups: () => plain(app.setups),
+  list_setups: () => ({ active: S.activeSetupId.value || 'default', modified: S.setupModified.value, setups: plain(app.setups) }),
   apply_setup: ({ id }) => {
-    const s = app.setups.find((x) => x.id === id)
-    if (!s) throw new Error(`No setup "${id}".`)
-    app.settings = plain(s.settings)
-    return { applied: s.name, summary: settingsSummary(app.settings) }
+    S.applySetup(id)
+    return { applied: S.activeSetup.value?.name ?? 'Default', summary: settingsSummary(app.settings) }
   },
-  save_setup: async ({ name, id }) => {
-    app.setups = await api.saveSetup({ id: id ?? '', name, settings: plain(app.settings), updatedAt: '' })
-    return plain(app.setups)
-  },
+  save_setup: async ({ name, id }) => (id ? S.renameSetup(id, name).then(() => S.updateSetup(id)) : S.saveSetupAs(name)),
   delete_setup: async ({ id }) => {
-    app.setups = await api.deleteSetup(id)
+    await S.deleteSetup(id)
     return plain(app.setups)
   },
 
   // ---- filaments + printer
   list_filaments: () => app.filaments.map((f) => ({ ...plain(f), selected: f.id === app.filamentId })),
   select_filament: ({ id }) => {
-    if (!app.filaments.some((f) => f.id === id)) throw new Error(`No filament "${id}".`)
-    app.filamentId = id
+    S.selectFilament(id)
     return plain(currentFilament())
   },
-  save_filament: async ({ filament }) => saveFilament(filament as Partial<Filament>),
+  save_filament: async ({ filament }) => {
+    const f = filament as Partial<Filament> & { id?: string }
+    return f.id ? S.updateFilament(f.id, f) : S.createFilament(f)
+  },
   delete_filament: async ({ id }) => {
-    app.filaments = await api.deleteFilament(id)
-    if (app.filamentId === id) app.filamentId = app.filaments[0]?.id ?? ''
-    return { remaining: app.filaments.length }
+    await S.deleteFilament(id)
+    return { remaining: app.filaments.length, selected: app.filamentId }
   },
   update_machine: async ({ patch }) => {
-    const next = { ...plain(app.machine as MachineSettings), ...patch } as MachineSettings
-    app.machine = await api.saveMachine(next)
-    return plain(app.machine)
+    const p = S.updateMachine(patch as Partial<MachineSettings>)
+    S.flushMachine()
+    return plain(await p)
   },
   set_preferences: async ({ patch }) => {
-    app.prefs = await api.savePrefs(patch as Partial<Prefs>)
+    const { theme, fileNamePattern, ...rest } = patch as Partial<Prefs>
+    if (theme) await S.setTheme(theme)
+    if (fileNamePattern !== undefined) {
+      const p = S.setFileNamePattern(fileNamePattern)
+      S.flushPrefs()
+      await p
+    }
+    if (Object.keys(rest).length) app.prefs = await api.savePrefs(rest)
     return plain(app.prefs)
   },
 
@@ -331,53 +240,47 @@ const handlers: Record<string, Handler> = {
     const n = Math.min(2000, count ?? 200)
     return { totalLines: lines.length, fromLine: from, lines: lines.slice(from - 1, from - 1 + n) }
   },
-  get_preview_info: () => {
-    if (!hooks.previewInfo) throw new Error('Open the preview first (navigate mode=preview after slicing).')
-    return hooks.previewInfo()
+  get_preview_info: async () => {
+    if (app.mode !== 'preview') await P.openPreview()
+    return plain(P.getPreviewInfo())
   },
-  set_layer_range: ({ min, max }) => {
-    if (!hooks.setLayerRange) throw new Error('Open the preview first (navigate mode=preview after slicing).')
-    return hooks.setLayerRange(min, max)
+  set_layer_range: async ({ min, max }) => {
+    if (app.mode !== 'preview') await P.openPreview()
+    const info = P.getPreviewInfo() as unknown as { layerCount?: number; range?: [number, number] }
+    const lo = min !== undefined ? min - 1 : (info.range?.[0] ?? 0)
+    const hi = max !== undefined ? max - 1 : (info.range?.[1] ?? (info.layerCount ?? 1) - 1)
+    const [a, b] = P.setLayerRange(lo, hi)
+    return { min: a + 1, max: b + 1 }
   },
-  set_feature_visible: ({ feature, visible }) => {
-    if (!hooks.setFeatureVisible) throw new Error('Open the preview first (navigate mode=preview after slicing).')
-    return hooks.setFeatureVisible(feature, visible)
+  set_feature_visible: async ({ feature, visible }) => {
+    if (app.mode !== 'preview') await P.openPreview()
+    P.setFeatureVisible(feature, visible)
+    return plain(P.getPreviewInfo())
   },
 
   // ---- output
-  save_to_sd: async ({ driveRoot, fileName }) => {
-    const r = app.slice.result
-    if (!r || app.slice.status !== 'done') throw new Error('Slice first (the last slice is missing or out of date).')
-    const drives = await api.listDrives()
-    const drive = driveRoot ? drives.find((d) => d.root.toLowerCase() === String(driveRoot).toLowerCase()) : drives.find((d) => d.likelyPrinterCard)
-    if (!drive) throw new Error(driveRoot ? `Drive ${driveRoot} is not connected.` : 'No printer SD card found. Insert the card or pass driveRoot (see list_drives).')
-    const saved = await api.saveToDrive(r.id, drive.root, fileName ?? r.fileName)
-    await recordJob(saved.path, '')
-    return { path: saved.path, drive: drive.root }
-  },
+  save_to_sd: async ({ driveRoot, fileName }) => ({ path: await O.saveToCard(driveRoot, fileName) }),
   save_gcode: async ({ path }) => {
     const r = app.slice.result
     if (!r || app.slice.status !== 'done') throw new Error('Slice first (the last slice is missing or out of date).')
     const saved = await api.saveGcodeTo(r.id, path)
-    await recordJob(saved.path, '')
+    await recordJob(saved.path, await O.thumbnail())
     return saved
   },
 
   // ---- history
   reprint: async ({ id }) => {
     await reprint(id)
-    return { objects: scene.objects.map(describeObject), settings: settingsSummary(app.settings) }
+    return { objects: V.listObjects(), settings: settingsSummary(app.settings) }
   },
   set_actual_time: async ({ id, seconds }) => {
-    const r = await api.setActualTime(id, seconds)
-    app.history = r.history
-    app.machine = r.machine
-    return { timeFactor: r.machine.timeFactor }
+    const entry = await O.setActualTime(id, seconds)
+    return { id: entry.id, actualSeconds: entry.actualSeconds, ...O.timeFactorInfo() }
   },
   delete_job: async ({ id }) => {
-    app.history = await api.deleteHistory(id)
+    await O.deleteJob(id)
     return { remaining: app.history.length }
-  }
+  },
 }
 
 export const AUTOMATION_COMMANDS = Object.keys(handlers)

@@ -78,17 +78,38 @@ export function objectMatrix(o: SceneObject): Matrix4 {
   return new Matrix4().compose(new Vector3(o.position.x, o.position.y, o.position.z), q, new Vector3(o.scale.x, o.scale.y, o.scale.z))
 }
 
+// World boxes are cached per mesh + rotation + scale, relative to the object's position: dragging an
+// object only translates its cached box, so a 1M-triangle part costs one vertex pass per rotation or
+// scale change instead of one per pointer move.
+const boxCache = new Map<string, Box3>()
+
 /** World-space bounding box of an object (exact, from its vertices). */
 export function worldBox(o: SceneObject): Box3 {
   const m = meshes.get(o.meshId)
   const box = new Box3()
   if (!m) return box
-  const pos = m.geometry.attributes.position
-  const mat = objectMatrix(o)
-  const v = new Vector3()
-  // sample every vertex for small meshes, a stride for huge ones (box stays within ~0.1 mm)
-  const stride = pos.count > 600_000 ? 3 : 1
-  for (let i = 0; i < pos.count; i += stride) box.expandByPoint(v.fromBufferAttribute(pos, i).applyMatrix4(mat))
+  const r = o.rotation
+  const s = o.scale
+  const key = `${o.meshId}|${r.x}|${r.y}|${r.z}|${s.x}|${s.y}|${s.z}`
+  let local = boxCache.get(key)
+  if (!local || local.isEmpty()) {
+    local = new Box3()
+    const pos = m.geometry.attributes.position
+    const mat = objectMatrix({ ...o, position: { x: 0, y: 0, z: 0 } })
+    const v = new Vector3()
+    // sample every vertex for small meshes, a stride for huge ones (box stays within ~0.1 mm)
+    const stride = pos.count > 600_000 ? 3 : 1
+    for (let i = 0; i < pos.count; i += stride) local.expandByPoint(v.fromBufferAttribute(pos, i).applyMatrix4(mat))
+    if (boxCache.size > 400) boxCache.clear()
+    boxCache.set(key, local)
+  }
+  box.copy(local)
+  box.min.x += o.position.x
+  box.min.y += o.position.y
+  box.min.z += o.position.z
+  box.max.x += o.position.x
+  box.max.y += o.position.y
+  box.max.z += o.position.z
   return box
 }
 
@@ -197,4 +218,58 @@ export function fromMatrix(elements: number[]): Pick<SceneObject, 'position' | '
 
 export function newId(): string {
   return uid()
+}
+
+// ---------------------------------------------------------------- transform helpers
+
+const DEG = Math.PI / 180
+
+export function objectQuaternion(o: SceneObject): Quaternion {
+  return new Quaternion().setFromEuler(new Euler(o.rotation.x * DEG, o.rotation.y * DEG, o.rotation.z * DEG, 'XYZ'))
+}
+
+const tidy = (v: number): number => {
+  const r = Math.round(v * 1000) / 1000
+  return Object.is(r, -0) ? 0 : r
+}
+
+/** Stores a rotation given as a quaternion (as XYZ Euler degrees, rounded to 0.001). */
+export function setObjectQuaternion(o: SceneObject, q: Quaternion): void {
+  const e = new Euler().setFromQuaternion(q.clone().normalize(), 'XYZ')
+  // Every XYZ rotation has a twin (x + 180, 180 - y, z + 180); keep the one with smaller angles,
+  // so laying a part on its side reads as "Y 26.6" rather than "X -180, Y 26.6, Z -180".
+  const wrap = (r: number): number => Math.atan2(Math.sin(r), Math.cos(r))
+  const alt = { x: wrap(e.x + Math.PI), y: wrap(Math.PI - e.y), z: wrap(e.z + Math.PI) }
+  const cost = (v: { x: number; y: number; z: number }): number => Math.abs(v.x) + Math.abs(v.y) + Math.abs(v.z)
+  const best = cost(alt) + 1e-9 < cost(e) ? alt : { x: e.x, y: e.y, z: e.z }
+  o.rotation.x = tidy(best.x / DEG)
+  o.rotation.y = tidy(best.y / DEG)
+  o.rotation.z = tidy(best.z / DEG)
+}
+
+/** Centre of the object's world bounding box. */
+export function boxCentre(o: SceneObject): Vector3 {
+  return worldBox(o).getCenter(new Vector3())
+}
+
+/** Moves the object so its footprint centre sits at (x, y). */
+export function moveCentreTo(o: SceneObject, x: number, y: number): void {
+  const c = boxCentre(o)
+  o.position.x = tidy(o.position.x + x - c.x)
+  o.position.y = tidy(o.position.y + y - c.y)
+}
+
+export function centreOnBed(o: SceneObject): void {
+  moveCentreTo(o, MACHINE.bed.x / 2, MACHINE.bed.y / 2)
+}
+
+/**
+ * Runs a rotation/scale change while keeping the footprint centre where it was, then drops the
+ * object onto the bed. Every rotate/scale edit goes through this so parts never wander or float.
+ */
+export function keepPlace(o: SceneObject, change: () => void): void {
+  const before = boxCentre(o)
+  change()
+  moveCentreTo(o, before.x, before.y)
+  dropToBed(o)
 }

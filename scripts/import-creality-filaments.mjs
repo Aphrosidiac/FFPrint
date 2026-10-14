@@ -58,7 +58,7 @@ for (const [name] of byName) {
     density: first(p.filament_density, 1.24),
     diameter: first(p.filament_diameter, 1.75),
     pricePerKg: 75,
-    notes: `From Creality Print 7.3 preset "${name}".`,
+    notes: '',
     source: { preset: name, filament_type: str(p.filament_type), pressure_advance: str(p.pressure_advance), filament_cost: str(p.filament_cost) }
   })
 }

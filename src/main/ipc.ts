@@ -1,6 +1,6 @@
 // Main-side implementation of the Api contract. One channel: 'ffprint:invoke' (name, args[]).
 
-import { copyFileSync, readFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import type { Api } from '@shared/contract'
 import { safeFileName } from './engine/gcode'
@@ -29,7 +29,7 @@ export function createApi(win: () => BrowserWindow | null): Api {
 
     slice: async (req) => {
       const filament = lib.getFilaments().find((f) => f.id === req.filamentId) ?? lib.getFilaments()[0]
-      return slice(req, filament, lib.getMachine())
+      return slice(req, filament, lib.getMachine(), lib.getPrefs().fileNamePattern)
     },
     cancelSlice: async () => cancelSlice(),
     readGcode: async (path) => readFileSync(path, 'utf8'),
@@ -51,13 +51,11 @@ export function createApi(win: () => BrowserWindow | null): Api {
       const opts = { title: 'Save G-code', defaultPath: safeFileName(fileName), filters: [{ name: 'G-code', extensions: ['gcode'] }] }
       const res = w ? await dialog.showSaveDialog(w, opts) : await dialog.showSaveDialog(opts)
       if (res.canceled || !res.filePath) return null
-      copyFileSync(r.gcodePath, res.filePath)
-      return { path: res.filePath }
+      return { path: sd.writeVerified(r.gcodePath, res.filePath, 'file') }
     },
     saveGcodeTo: async (sliceId, path) => {
       const target = /\.gcode$/i.test(path) ? path : `${path}.gcode`
-      copyFileSync(sliceOrThrow(sliceId).gcodePath, target)
-      return { path: target }
+      return { path: sd.writeVerified(sliceOrThrow(sliceId).gcodePath, target, 'file') }
     },
     ejectDrive: (root) => sd.ejectDrive(root),
     automationStatus: async () => automationStatus(),

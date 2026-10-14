@@ -2,11 +2,12 @@
 // and toasts. Components read `app` and call the actions below; nothing else talks to main.
 
 import { reactive, watch } from 'vue'
-import { defaultPrintSettings, settingsSummary } from '@shared/settings'
+import { QUALITIES, defaultPrintSettings, qualityFits, settingsSummary } from '@shared/settings'
 import type { Drive, Filament, HistoryEntry, LoadedFile, MachineSettings, Prefs, PrintSettings, Setup, SliceResult } from '@shared/types'
 import { api, errorText, onEvent } from '@/lib/api'
 import { arrange } from '@/lib/arrange'
-import { parseModel } from '@/lib/loaders'
+import { designerIntent } from '@/lib/designer'
+import { parseFile, parseModel } from '@/lib/loaders'
 import { addMesh, addObject, clearScene, dropToBed, fromMatrix, issues, scene, select, toProject, toScenePayload, type SceneObject } from './scene'
 
 export type Mode = 'prepare' | 'preview'
@@ -40,6 +41,7 @@ export const app = reactive({
 
 let toastSeq = 0
 export function toast(kind: Toast['kind'], text: string, action?: Toast['action']): void {
+  if (app.toasts.some((t) => t.text === text)) return
   const id = ++toastSeq
   app.toasts.push({ id, kind, text, action })
   setTimeout(() => dismissToast(id), kind === 'error' ? 8000 : 4500)
@@ -90,7 +92,8 @@ export async function init(): Promise<void> {
     (id) => api.savePrefs({ lastFilamentId: id })
   )
   // Any change after a slice makes the result stale (it is kept so the preview still shows it).
-  watch([() => scene.revision, () => app.settings, () => app.filamentId, () => app.machine], () => {
+  // timeFactor only changes the shown estimate, not the G-code, so it does not make a slice stale.
+  watch([() => scene.revision, () => app.settings, () => app.filamentId, () => (app.machine ? { ...app.machine, timeFactor: 1 } : null)], () => {
     if (app.slice.status === 'done') app.slice.status = 'stale'
   }, { deep: true })
 }
@@ -107,15 +110,22 @@ export async function refreshDrives(): Promise<void> {
 
 export async function addLoadedFiles(files: LoadedFile[]): Promise<void> {
   const added: SceneObject[] = []
+  const bedWasEmpty = scene.objects.length === 0
+  let intent: { name: string; patch: Partial<PrintSettings>; notes: string[] } | null = null
   for (const f of files) {
     if (f.ext === 'ffprint') {
       await loadProject(() => api.openProject(f.path))
       continue
     }
     try {
-      for (const model of parseModel(f)) {
+      const parsed = parseFile(f)
+      for (const model of parsed.models) {
         const mesh = addMesh(model.name, model.geometry)
         added.push(addObject(mesh.id, model.name))
+      }
+      if (parsed.projectSettings && !intent) {
+        const d = designerIntent(parsed.projectSettings, app.settings)
+        if (d) intent = { name: f.name, ...d }
       }
     } catch (e) {
       toast('error', `Could not open ${f.name}: ${errorText(e)}`)
@@ -128,6 +138,17 @@ export async function addLoadedFiles(files: LoadedFile[]): Promise<void> {
   app.mode = 'prepare'
   if (!fits) toast('info', 'Not everything fits on the bed. Objects in red are outside the printable area.')
   for (const o of added) if (o.position.z !== 0) dropToBed(o)
+  // A project's own print settings (the designer's intent) apply when it starts a fresh bed.
+  if (intent && bedWasEmpty) {
+    const before = JSON.parse(JSON.stringify(app.settings)) as PrintSettings
+    app.settings = { ...app.settings, ...intent.patch }
+    toast('info', `Using ${intent.name}'s recommended settings: ${intent.notes.join(', ')}.`, {
+      label: 'Undo',
+      run: () => {
+        app.settings = before
+      }
+    })
+  }
 }
 
 export async function openDialog(): Promise<void> {
@@ -193,6 +214,7 @@ export function blockingIssues(): string[] {
   const out: string[] = []
   const visible = scene.objects.filter((o) => o.visible)
   if (!visible.length) out.push('Add a model to the bed.')
+  if (app.machine && !qualityFits(app.settings.quality, app.machine.nozzle)) out.push(`${QUALITIES.find((q) => q.id === app.settings.quality)?.label} layers are too thick for the ${app.machine.nozzle} mm nozzle. Pick a finer quality.`)
   for (const o of visible) {
     const list = issues(o).filter((i) => i !== 'purge-zone')
     if (list.length) out.push(`${o.name}: ${list.includes('outside') ? 'outside the bed' : list.includes('too-tall') ? 'too tall' : 'below the bed'}`)
