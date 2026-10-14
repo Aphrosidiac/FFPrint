@@ -64,6 +64,13 @@ onBeforeUnmount(() => {
 })
 
 // Keep the 3D scene in step with the store: structure, transforms, visibility and selection.
+// Shade the faces that will get support while supports are on.
+watch(
+  () => [app.settings.supports, app.settings.supportAngle, view.value] as const,
+  ([mode, angle, w]) => w?.setOverhangShading(mode !== 'off', angle),
+  { immediate: true }
+)
+
 watch(
   () => [scene.revision, scene.selection, scene.objects, meshes.size],
   () => view.value?.sync(),

@@ -3,6 +3,7 @@
 // a frame is drawn when the store, the camera, the gizmo or the theme changes, never in an idle loop.
 
 import {
+  Color,
   Box3,
   BufferGeometry,
   DirectionalLight,
@@ -89,6 +90,37 @@ interface GizmoStart {
   centre: Vector3
 }
 
+/** Shared uniforms for the "needs support" tint on parts (see setOverhangShading). */
+const overhangUniforms = {
+  uOverhangOn: { value: 0 },
+  uOverhangCos: { value: Math.cos(Math.PI / 4) },
+  uOverhangColor: { value: new Color(0xf0883e) }
+}
+
+/** Adds the overhang tint to a part material: world-space face normal and height, mixed in after the
+ *  base colour. Faces resting on the bed (Z < 0.3 mm) never count. */
+function withOverhangShading<T extends MeshStandardMaterial>(m: T): T {
+  m.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, overhangUniforms)
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying float vFFNz;\nvarying float vFFz;')
+      .replace(
+        '#include <begin_vertex>',
+        '#include <begin_vertex>\nvFFNz = normalize(transpose(inverse(mat3(modelMatrix))) * objectNormal).z;\nvFFz = (modelMatrix * vec4(transformed, 1.0)).z;'
+      )
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying float vFFNz;\nvarying float vFFz;\nuniform float uOverhangOn;\nuniform float uOverhangCos;\nuniform vec3 uOverhangColor;')
+      .replace(
+        '#include <color_fragment>',
+        '#include <color_fragment>\nbool ffOverhang = uOverhangOn > 0.5 && vFFNz < -uOverhangCos && vFFz > 0.3;\nif (ffOverhang) diffuseColor.rgb = mix(diffuseColor.rgb, uOverhangColor, 0.8);'
+      )
+      // Overhangs face down, into shadow: a little self-light keeps the tint readable.
+      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\nif (ffOverhang) totalEmissiveRadiance += uOverhangColor * 0.45;')
+  }
+  m.customProgramCacheKey = () => 'ff-overhang'
+  return m
+}
+
 export interface ContextMenuRequest {
   x: number
   y: number
@@ -143,8 +175,8 @@ export class Workspace3D {
 
     this.colors = readColors()
     this.mats = {
-      normal: new MeshStandardMaterial({ roughness: 0.62, metalness: 0.02 }),
-      selected: new MeshStandardMaterial({ roughness: 0.62, metalness: 0.02 }),
+      normal: withOverhangShading(new MeshStandardMaterial({ roughness: 0.62, metalness: 0.02 })),
+      selected: withOverhangShading(new MeshStandardMaterial({ roughness: 0.62, metalness: 0.02 })),
       danger: new MeshStandardMaterial({ roughness: 0.62, metalness: 0.02 }),
       overlay: new MeshBasicMaterial({ transparent: true, opacity: 0.6, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 })
     }
@@ -236,6 +268,15 @@ export class Workspace3D {
       this.fitted = true
       this.setView('iso')
     }
+    this.requestRender()
+  }
+
+  /** Tint the surfaces that will need support (downward faces steeper than the overhang angle). */
+  setOverhangShading(on: boolean, angleDeg: number): void {
+    overhangUniforms.uOverhangOn.value = on ? 1 : 0
+    // Orca measures the overhang angle from the horizontal: a face needs support when it faces down
+    // and lies within `angle` of flat, i.e. its normal's downward component exceeds cos(angle).
+    overhangUniforms.uOverhangCos.value = Math.cos((Math.max(0, Math.min(90, angleDeg)) * Math.PI) / 180)
     this.requestRender()
   }
 

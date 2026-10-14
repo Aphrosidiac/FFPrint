@@ -33,8 +33,8 @@ export const STRENGTHS: { id: StrengthId; label: string; hint: string; walls: nu
 
 export const SUPPORT_MODES: { id: SupportMode; label: string; hint: string }[] = [
   { id: 'off', label: 'Off', hint: 'No supports.' },
-  { id: 'tree', label: 'Tree', hint: 'Branches that touch the model only where needed. Easy to remove.' },
-  { id: 'grid', label: 'Grid', hint: 'Classic support under every overhang. Strongest, more cleanup.' }
+  { id: 'tree', label: 'Tree', hint: 'Branches that touch the model only where needed. Easy to remove. Orange areas on the model get support.' },
+  { id: 'grid', label: 'Grid', hint: 'Classic support under every overhang. Strongest, more cleanup. Orange areas on the model get support.' }
 ]
 
 export const ADHESION_TYPES: { id: AdhesionType; label: string; hint: string }[] = [
