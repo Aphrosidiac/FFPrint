@@ -18,7 +18,6 @@ export interface ViewColors {
   /** the physical plate (rim, grip tab) and the PEI print surface */
   plateFrame: Color
   plateSurface: Color
-  plateMarks: Color
   plateGrid: Color
   plateEdge: Color
   dark: boolean
@@ -67,7 +66,6 @@ export function readColors(): ViewColors {
   return {
     plateFrame: new Color(plate.frame),
     plateSurface,
-    plateMarks: mixSrgb(plateSurface, white, dark ? 0.62 : 0.72),
     plateGrid: mixSrgb(plateSurface, white, dark ? 0.1 : 0.12),
     plateEdge: mixSrgb(plateSurface, white, dark ? 0.3 : 0.38),
     background: token('--viewport-bg'),

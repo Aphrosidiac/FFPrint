@@ -1,6 +1,11 @@
 // The Ender-3 V3 SE build plate at real scale: Creality's own bed model (spring-steel sheet with its
-// front grip tab) under the 220 x 220 printable area, the printed sheet markings, a faint 10 / 50 mm
-// grid, the printable-area edge, a faint 250 mm build volume, the purge-line lane and an origin mark.
+// front grip tabs) under the 220 x 220 printable area, the printed sheet markings, a faint 10 / 50 mm
+// grid, the printable-area edge, a faint 250 mm build volume and an origin mark.
+//
+// The markings are Creality Print 7.3's own plate artwork (resources/images/texture.png): CREALITY tab, "Warning hot surface" triangles, fingerprint grips, the purge-line
+// marker and the plate name. Like Creality Print, it is stretched over the whole physical plate
+// (the bed model's bounds), not just the printable square. Its light-theme artwork is drawn for a
+// pale plate; FF Print's plate stays dark in both themes, so the white artwork is used in both.
 //
 // The bed model's origin is the bed centre (as in Orca / Creality Print's bed_model), so it is placed
 // at (110, 110, 0); its top surface is Z = 0.
@@ -14,15 +19,16 @@ import {
   LinearFilter,
   LinearMipmapLinearFilter,
   Mesh,
+  MeshBasicMaterial,
   MeshStandardMaterial,
-  NoColorSpace,
   PlaneGeometry,
+  SRGBColorSpace,
   TextureLoader
 } from 'three'
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js'
 import { MACHINE } from '@shared/machine'
 import bedStlUrl from '@/assets/bed/v3se_bed.stl?url'
-import bedTextureUrl from '@/assets/bed/v3se_bed_texture.png?url'
+import marksUrl from '@/assets/bed/plate_marks.png?url'
 import type { ViewColors } from './colors'
 
 const BX = MACHINE.bed.x
@@ -86,25 +92,16 @@ export function createBed(onLoaded: () => void): Bed {
   surface.position.set(BX / 2, BY / 2, 0)
   surface.renderOrder = -2
 
-  // Sheet markings (logo tab, corner marks, edge lines). The texture is dark grey on transparent;
-  // it is drawn inverted and tinted, so the marks print light on the dark sheet like the real one.
-  const marksMat = new MeshStandardMaterial({ transparent: true, depthWrite: false, roughness: 0.95, metalness: 0, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 })
-  marksMat.onBeforeCompile = (shader) => {
-    shader.fragmentShader = shader.fragmentShader.replace(
-      '#include <map_fragment>',
-      `#ifdef USE_MAP
-        vec4 tx = texture2D( map, vMapUv );
-        diffuseColor.rgb *= ( 1.0 - tx.rgb );
-        diffuseColor.a *= tx.a;
-      #endif`
-    )
-  }
-  const marks = new Mesh(new PlaneGeometry(BX, BY), marksMat)
-  marks.position.set(BX / 2, BY / 2, 0.02)
+  // Sheet markings over the whole plate.
+  const PW = PLATE_BOUNDS.maxX - PLATE_BOUNDS.minX
+  const PH = PLATE_BOUNDS.maxY - PLATE_BOUNDS.minY
+  const marksMat = new MeshBasicMaterial({ transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 })
+  const marks = new Mesh(new PlaneGeometry(PW, PH), marksMat)
+  marks.position.set(PLATE_BOUNDS.minX + PW / 2, PLATE_BOUNDS.minY + PH / 2, 0.02)
   marks.renderOrder = -1
   marks.visible = false
-  new TextureLoader().load(bedTextureUrl, (tex) => {
-    tex.colorSpace = NoColorSpace
+  new TextureLoader().load(marksUrl, (tex) => {
+    tex.colorSpace = SRGBColorSpace
     tex.anisotropy = 8
     tex.minFilter = LinearMipmapLinearFilter
     tex.magFilter = LinearFilter
@@ -142,20 +139,16 @@ export function createBed(onLoaded: () => void): Bed {
   }
   const volume = new LineSegments(lines(v), gridMat())
 
-  // The purge line runs on the plate just off the left edge (X -2.1 / -2.4, Y 20-145).
-  const purge = new LineSegments(lines([-2.25, 20, z, -2.25, 145, z]), gridMat())
-
   // Origin: a small L at the front-left corner of the printable area.
   const origin = new LineSegments(lines([0, 0, z * 2, 12, 0, z * 2, 0, 0, z * 2, 0, 12, z * 2]), new LineBasicMaterial())
 
-  group.add(plate, surface, marks, minorLines, majorLines, edge, volume, purge, origin)
+  group.add(plate, surface, marks, minorLines, majorLines, edge, volume, origin)
 
   return {
     group,
     applyColors(c) {
       frameMat.color.copy(c.plateFrame)
       surfaceMat.color.copy(c.plateSurface)
-      marksMat.color.copy(c.plateMarks)
       const set = (l: LineSegments, color: ViewColors['accent'], opacity: number): void => {
         const m = l.material as LineBasicMaterial
         m.color.copy(color)
@@ -165,7 +158,6 @@ export function createBed(onLoaded: () => void): Bed {
       set(majorLines, c.plateGrid, 0.95)
       set(edge, c.plateEdge, 1)
       set(volume, c.edge, c.dark ? 0.4 : 0.35)
-      set(purge, c.plateMarks, 0.5)
       ;(origin.material as LineBasicMaterial).color.copy(c.accent)
     },
     dispose() {
