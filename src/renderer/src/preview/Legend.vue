@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Feature types with their colour, a show/hide toggle and their share of the print time.
 import { computed, ref, watch } from 'vue'
-import { ChevronDown, ChevronUp, Eye, EyeOff } from 'lucide-vue-next'
+import { ChevronDown, ChevronUp } from 'lucide-vue-next'
 import { duration } from '@/lib/format'
 import { TRAVEL_COLOR } from './palette'
 import { setFeatureVisible, showAllFeatures } from './actions'
@@ -73,15 +73,12 @@ const share = (s: number): string => (s < 0.01 ? '<1%' : `${Math.round(s * 100)}
     <ChevronUp class="chev" />
   </button>
   <div v-else class="legend">
-    <div class="head">
-      <button type="button" class="all" :title="allShown ? 'Hide all' : 'Show all'" @click="toggleAll">
-        <EyeOff v-if="allShown" />
-        <Eye v-else />
-      </button>
+    <!-- the whole header folds the list back to the dot strip -->
+    <button type="button" class="head" title="Fold the feature list" aria-label="Fold the feature list" @click="open = false">
       <span class="section-title">Features</span>
       <span class="col">Time</span>
-      <button type="button" class="all" title="Collapse" aria-label="Collapse the feature list" @click="open = false"><ChevronDown /></button>
-    </div>
+      <ChevronDown class="fold" />
+    </button>
     <button
       v-for="r in rows"
       :key="r.type"
@@ -103,7 +100,10 @@ ${duration(r.time)} · ${(r.length / 1000).toFixed(2)} m of path`"
       <span class="name">Travel</span>
       <span class="val">{{ preview.travel ? 'On' : 'Off' }}</span>
     </button>
-    <p class="tip">Click to hide · double-click to show only that</p>
+    <div class="foot">
+      <span class="tip">Click to hide · double-click to show only that</span>
+      <button type="button" class="link" @click="toggleAll">{{ allShown ? 'Hide all' : 'Show all' }}</button>
+    </div>
   </div>
 </template>
 
@@ -140,12 +140,31 @@ ${duration(r.time)} · ${(r.length / 1000).toFixed(2)} m of path`"
   width: 14px;
   height: 14px;
 }
-.tip {
+.foot {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
   margin-top: 4px;
   padding: 6px 4px 0;
   border-top: 1px solid var(--border);
+}
+.tip {
+  flex: 1;
   font-size: var(--fs-11);
   color: var(--text-3);
+}
+.link {
+  flex: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent-text);
+  font-size: var(--fs-11);
+  font-weight: 500;
+  cursor: pointer;
+}
+.link:hover {
+  text-decoration: underline;
 }
 .legend {
   width: 208px;
@@ -158,10 +177,25 @@ ${duration(r.time)} · ${(r.length / 1000).toFixed(2)} m of path`"
 .head {
   display: flex;
   align-items: center;
-  gap: 4px;
-  height: 24px;
-  padding: 0 4px 0 0;
+  gap: 6px;
+  width: 100%;
+  height: 28px;
+  padding: 0 4px 0 6px;
   margin-bottom: 4px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.head:hover {
+  background: var(--surface-3);
+}
+.fold {
+  width: 16px;
+  height: 16px;
+  color: var(--text-2);
 }
 .head .section-title {
   flex: 1;
