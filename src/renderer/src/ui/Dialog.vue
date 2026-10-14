@@ -39,6 +39,7 @@ onMounted(() => sync(open.value))
   background: var(--surface);
   color: var(--text);
   box-shadow: var(--shadow-pop);
+  overflow: hidden;
 }
 .dlg::backdrop {
   background: rgb(0 0 0 / 0.35);
@@ -49,6 +50,7 @@ onMounted(() => sync(open.value))
   max-height: calc(100vh - 48px);
 }
 header {
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -76,11 +78,15 @@ h2 {
   width: 14px;
   height: 14px;
 }
+/* Only the body scrolls; the title and the buttons stay put however short the window is. */
 .body {
+  flex: 1 1 auto;
+  min-height: 0;
   padding: 4px 20px 20px;
   overflow: auto;
 }
 footer {
+  flex: none;
   display: flex;
   justify-content: flex-end;
   gap: 8px;

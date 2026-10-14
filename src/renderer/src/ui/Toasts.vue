@@ -20,7 +20,7 @@ function act(id: number, run: () => void): void {
 </script>
 
 <template>
-  <div ref="el" popover="manual" class="toasts" aria-live="polite">
+  <div ref="el" popover="manual" class="toasts" :class="{ ws: app.page === 'workspace' }" aria-live="polite">
     <div v-for="t in app.toasts" :key="t.id" class="toast" :class="t.kind">
       <span class="dot" />
       <span class="text">{{ t.text }}</span>
@@ -33,9 +33,12 @@ function act(id: number, run: () => void): void {
 </template>
 
 <style scoped>
+/* Bottom centre of the 3D view in the workspace (never over the Slice / Save buttons), bottom centre
+   of the window on the other pages. */
 .toasts {
   position: fixed;
-  inset: auto 16px 16px auto;
+  inset: auto auto 16px 50%;
+  transform: translateX(-50%);
   margin: 0;
   padding: 0;
   border: 0;
@@ -43,8 +46,11 @@ function act(id: number, run: () => void): void {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  width: 360px;
+  width: min(420px, calc(100vw - var(--left-w) - var(--right-w) - 32px));
   overflow: visible;
+}
+.toasts.ws {
+  left: calc(var(--left-w) + (100vw - var(--left-w) - var(--right-w)) / 2);
 }
 .toast {
   display: flex;

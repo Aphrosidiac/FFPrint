@@ -21,7 +21,7 @@ const fields = computed(() => (query.value.trim() ? results.value : CATALOGUE.fi
 const context = computed(() => {
   const q = QUALITIES.find((x) => x.id === app.settings.quality)
   const f = currentFilament()
-  return `Defaults are what FF Print slices with for ${q?.label ?? ''} ${q?.layerHeight.toFixed(2) ?? ''} mm, a ${app.machine?.nozzle ?? '0.4'} mm nozzle${f ? ` and ${f.name}` : ''}: the Ender-3 V3 SE profile with Creality Print's tuning.`
+  return `Defaults come from the Ender-3 V3 SE profile with Creality Print's tuning, for ${q?.label ?? ''} ${q?.layerHeight.toFixed(2) ?? ''} mm with a ${app.machine?.nozzle ?? '0.4'} mm nozzle${f ? ` and ${f.name}` : ''}.`
 })
 
 function pickGroup(g: string): void {
@@ -133,7 +133,7 @@ watch(open, (v) => {
   display: grid;
   grid-template-columns: 176px minmax(0, 1fr);
   gap: 16px;
-  height: min(480px, calc(100vh - 260px));
+  height: min(480px, calc(100vh - 330px));
 }
 .groups {
   display: flex;

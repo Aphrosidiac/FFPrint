@@ -3,7 +3,7 @@
 // several. Every edit goes through viewport/actions.ts (rotation/scale edits keep the part in place
 // and drop it onto the bed).
 import { computed, ref } from 'vue'
-import { ArrowDownFromLine, ArrowDownToLine, Crosshair, LayoutGrid, Link, Unlink, Trash2, TriangleAlert, Maximize2 } from 'lucide-vue-next'
+import { ArrowDownFromLine, ArrowDownToLine, Crosshair, LayoutGrid, Link, Unlink, RotateCw, Trash2, TriangleAlert, Maximize2 } from 'lucide-vue-next'
 import { meshes, selected, worldBox, ISSUE_TEXT, issues, type Issue } from '@/stores/scene'
 import {
   arrangeAll,
@@ -131,9 +131,9 @@ const banner = computed<Banner | null>(() => {
       <div class="block">
         <div class="block-head"><span class="section-title">Rotate 90°</span></div>
         <div class="quarter flush">
-          <Button size="sm" variant="ghost" @click="turn('x')">X +90°</Button>
-          <Button size="sm" variant="ghost" @click="turn('y')">Y +90°</Button>
-          <Button size="sm" variant="ghost" @click="turn('z')">Z +90°</Button>
+          <Button size="sm" title="Rotate 90° about X" @click="turn('x')"><RotateCw />X +90°</Button>
+          <Button size="sm" title="Rotate 90° about Y" @click="turn('y')"><RotateCw />Y +90°</Button>
+          <Button size="sm" title="Rotate 90° about Z" @click="turn('z')"><RotateCw />Z +90°</Button>
         </div>
       </div>
       <div class="grid2">
@@ -166,9 +166,9 @@ const banner = computed<Banner | null>(() => {
         </div>
         <AxisFields label="Rotation" :values="one.rotation" :step="1" :digits="2" @change="setRot" />
         <div class="quarter">
-          <Button size="sm" variant="ghost" title="Rotate 90° about X" @click="turn('x')">+90°</Button>
-          <Button size="sm" variant="ghost" title="Rotate 90° about Y" @click="turn('y')">+90°</Button>
-          <Button size="sm" variant="ghost" title="Rotate 90° about Z" @click="turn('z')">+90°</Button>
+          <Button size="sm" title="Rotate 90° about X" @click="turn('x')"><RotateCw />90°</Button>
+          <Button size="sm" title="Rotate 90° about Y" @click="turn('y')"><RotateCw />90°</Button>
+          <Button size="sm" title="Rotate 90° about Z" @click="turn('z')"><RotateCw />90°</Button>
         </div>
         <div class="grid2">
           <Button size="sm" :class="{ on: ws.layFlat }" title="Pick a face in the view to put it on the bed (L)" @click="setLayFlatMode(!ws.layFlat)"><ArrowDownToLine />Lay on face</Button>
@@ -294,6 +294,15 @@ const banner = computed<Banner | null>(() => {
 }
 .quarter.flush {
   padding-left: 0;
+}
+.quarter :deep(.btn) {
+  gap: 4px;
+  padding: 0 4px;
+}
+.quarter :deep(.btn svg) {
+  width: 13px;
+  height: 13px;
+  color: var(--text-3);
 }
 .grid2 {
   display: grid;

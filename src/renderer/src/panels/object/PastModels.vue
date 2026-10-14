@@ -200,14 +200,19 @@ onMounted(() => void refreshPast())
   line-height: 16px;
   text-transform: uppercase;
 }
+/* Two lines for the name (Creality project names are long), always two lines tall so tiles line up. */
 .name {
   padding: 0 2px;
   font-size: var(--fs-12);
   font-weight: 500;
+  line-height: 16px;
+  height: 32px;
   color: var(--text);
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 .meta {
   padding: 0 2px;

@@ -155,7 +155,10 @@ const summary = computed(() => settingsSummary(s.value))
   display: flex;
   flex-direction: column;
   gap: 20px;
-  padding: 16px;
+  /* The scrollbar's 10px is always reserved (right padding 6 + 10 = 16), so the panel doesn't
+     shift sideways when the result card takes space and the list starts to scroll. */
+  padding: 16px 6px 16px 16px;
+  scrollbar-gutter: stable;
 }
 hr {
   width: 100%;

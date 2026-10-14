@@ -13,6 +13,7 @@ import Button from '@/ui/Button.vue'
 import Dialog from '@/ui/Dialog.vue'
 import IconButton from '@/ui/IconButton.vue'
 import FilamentEditor from './filaments/FilamentEditor.vue'
+import BackLink from '@/ui/BackLink.vue'
 
 const materialLabel = (m: Material): string => MATERIALS.find((x) => x.id === m)?.label ?? m
 const currency = computed(() => app.prefs?.currency ?? 'RM')
@@ -72,6 +73,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocDown))
 <template>
   <div class="page">
     <div class="inner">
+      <BackLink />
       <header class="head">
         <div>
           <h1>Filament library</h1>
@@ -154,6 +156,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocDown))
   margin-bottom: 16px;
 }
 h1 {
+  font-family: var(--font-display);
   font-size: var(--fs-20);
   font-weight: 600;
 }
@@ -203,7 +206,7 @@ h1 {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  box-shadow: inset 0 0 0 1px var(--border-strong);
+  box-shadow: inset 0 0 0 1px var(--swatch-ring);
 }
 .table {
   border: 1px solid var(--border);
@@ -250,7 +253,7 @@ h1 {
   height: 20px;
   flex: none;
   border-radius: 50%;
-  box-shadow: inset 0 0 0 1px var(--border-strong);
+  box-shadow: inset 0 0 0 1px var(--swatch-ring);
 }
 .name-text {
   display: flex;

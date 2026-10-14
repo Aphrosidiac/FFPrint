@@ -16,6 +16,12 @@ const pct = (v: number): number => (last.value ? (1 - v / last.value) * 100 : 0)
 const top = computed(() => range.value[1])
 const bottom = computed(() => range.value[0])
 const topInfo = computed(() => props.layers[top.value])
+/** Print time from the start to the end of the top layer shown ("when does it reach this height"). */
+const elapsed = computed(() => {
+  let t = 0
+  for (let i = 0; i <= top.value && i < props.layers.length; i++) t += props.layers[i].time
+  return t
+})
 
 function set(lo: number, hi: number): void {
   const L = last.value
@@ -119,10 +125,10 @@ function play(): void {
       <div class="rail" />
       <div class="fill" :style="{ top: pct(top) + '%', bottom: 100 - pct(bottom) + '%' }" />
       <!-- the readout rides next to the top handle instead of sitting in a panel -->
-      <div class="tag hi-tag" :style="{ top: pct(top) + '%' }">
+      <div class="tag hi-tag" :style="{ top: pct(top) + '%' }" :title="`Layer ${top + 1} of ${last + 1}, ${topInfo ? topInfo.z.toFixed(2) : '0.00'} mm high, reached ${duration(elapsed)} into the print`">
         <span class="layer num">{{ top + 1 }}<span class="of">/{{ last + 1 }}</span></span>
         <span class="z num">{{ topInfo ? topInfo.z.toFixed(2) : '0.00' }} mm</span>
-        <span v-if="topInfo && topInfo.time > 0" class="t num">{{ duration(topInfo.time) }}</span>
+        <span v-if="elapsed > 0" class="t num">{{ duration(elapsed) }}</span>
       </div>
       <div v-if="bottom > 0" class="tag lo-tag num" :style="{ top: pct(bottom) + '%' }">{{ bottom + 1 }}</div>
       <button

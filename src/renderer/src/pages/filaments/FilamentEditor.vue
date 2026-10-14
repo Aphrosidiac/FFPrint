@@ -257,7 +257,7 @@ section + section {
   height: 32px;
   flex: none;
   border-radius: var(--r);
-  box-shadow: inset 0 0 0 1px var(--border-strong);
+  box-shadow: inset 0 0 0 1px var(--swatch-ring);
   cursor: pointer;
   overflow: hidden;
 }

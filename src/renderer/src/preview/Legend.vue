@@ -101,7 +101,7 @@ ${duration(r.time)} · ${(r.length / 1000).toFixed(2)} m of path`"
       <span class="val">{{ preview.travel ? 'On' : 'Off' }}</span>
     </button>
     <div class="foot">
-      <span class="tip">Click to hide · double-click to show only that</span>
+      <span class="tip" title="Click a feature to hide it. Double-click to show only that feature.">Double-click to isolate</span>
       <button type="button" class="link" @click="toggleAll">{{ allShown ? 'Hide all' : 'Show all' }}</button>
     </div>
   </div>
@@ -150,6 +150,10 @@ ${duration(r.time)} · ${(r.length / 1000).toFixed(2)} m of path`"
 }
 .tip {
   flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: var(--fs-11);
   color: var(--text-3);
 }

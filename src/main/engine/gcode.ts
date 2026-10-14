@@ -71,6 +71,13 @@ export function dedupeName(fileName: string, exists: (name: string) => boolean):
   return `${stem}_${Date.now()}.gcode`
 }
 
+/** Today as YYYY-MM-DD in the PC's own time zone (toISOString is UTC: before 8 am in Malaysia it
+ *  gave yesterday). */
+export function localDate(d = new Date()): string {
+  const p = (n: number): string => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
+}
+
 /** Fills `{name}` `{quality}` `{material}` `{date}` in the user's file-name pattern. */
 export function applyPattern(pattern: string, vars: Record<string, string>): string {
   return pattern.replace(/\{(\w+)\}/g, (_, k: string) => vars[k] ?? '')

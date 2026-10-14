@@ -10,6 +10,7 @@ import { deleteJob, reprint, timeFactorInfo } from '@/stores/outputActions'
 import Button from '@/ui/Button.vue'
 import Dialog from '@/ui/Dialog.vue'
 import HistoryItem from './history/HistoryItem.vue'
+import BackLink from '@/ui/BackLink.vue'
 
 const info = computed(() => timeFactorInfo())
 const factor = computed(() => info.value.factor)
@@ -47,6 +48,7 @@ async function doDelete(): Promise<void> {
 <template>
   <div class="page">
     <div class="inner">
+      <BackLink />
       <header class="head">
         <div>
           <h1>History</h1>
@@ -87,7 +89,7 @@ async function doDelete(): Promise<void> {
   background: var(--bg);
 }
 .inner {
-  max-width: 920px;
+  max-width: 1040px;
   margin: 0 auto;
   padding: 24px 24px 40px;
 }

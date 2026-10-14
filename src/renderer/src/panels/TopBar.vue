@@ -42,7 +42,7 @@ function go(page: typeof app.page): void {
     </div>
 
     <div class="group">
-      <button type="button" class="tb" title="Open models (Ctrl+O)" @click="app.page = 'workspace'; openDialog()"><FolderOpen /><span>Open</span></button>
+      <button type="button" class="tb" title="Open models (Ctrl+O)" @click="app.page = 'workspace'; openDialog()"><FolderOpen /><span class="lbl">Open</span></button>
       <div class="recent">
         <button type="button" class="tb icon" title="Recent files" :class="{ on: recentOpen }" @click="toggleRecent"><ChevronDown /></button>
         <div v-if="recentOpen" class="menu" @mouseleave="recentOpen = false">
@@ -53,7 +53,7 @@ function go(page: typeof app.page): void {
           <div v-if="!recent.length" class="menu-empty">Nothing opened yet</div>
         </div>
       </div>
-      <button type="button" class="tb" title="Save project (Ctrl+S)" :disabled="!hasObjects" @click="saveProject"><Save /><span>Save project</span></button>
+      <button type="button" class="tb" title="Save project (Ctrl+S)" :disabled="!hasObjects" @click="saveProject"><Save /><span class="lbl">Save project</span></button>
       <span class="sep" />
       <button type="button" class="tb icon" title="Undo (Ctrl+Z)" aria-label="Undo" :disabled="!canUndo || app.page !== 'workspace'" @click="undo"><Undo2 /></button>
       <button type="button" class="tb icon" title="Redo (Ctrl+Y)" aria-label="Redo" :disabled="!canRedo || app.page !== 'workspace'" @click="redo"><Redo2 /></button>
@@ -61,9 +61,6 @@ function go(page: typeof app.page): void {
 
     <div class="centre">
       <Segmented v-if="app.page === 'workspace'" v-model="app.mode" :options="modeOptions" size="sm" class="modes" />
-      <div v-else class="page-title">
-        {{ app.page === 'filaments' ? 'Filament library' : app.page === 'machine' ? 'Printer' : 'History' }}
-      </div>
     </div>
 
     <div class="group right">
@@ -87,6 +84,7 @@ function go(page: typeof app.page): void {
   padding: 0 calc(140px + 8px) 0 12px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
+  white-space: nowrap;
   -webkit-app-region: drag;
 }
 .top.mac {
@@ -136,10 +134,6 @@ function go(page: typeof app.page): void {
 }
 .modes {
   width: 200px;
-}
-.page-title {
-  font-weight: 600;
-  font-size: var(--fs-13);
 }
 .tb {
   display: inline-flex;
@@ -229,6 +223,17 @@ function go(page: typeof app.page): void {
 }
 .menu-item:hover {
   background: var(--surface-3);
+}
+/* Narrow windows: drop the printer name, then the Open / Save labels (their tooltips stay). */
+@media (max-width: 1320px) {
+  .printer {
+    display: none;
+  }
+}
+@media (max-width: 1200px) {
+  .lbl {
+    display: none;
+  }
 }
 .menu-empty {
   padding: 8px;

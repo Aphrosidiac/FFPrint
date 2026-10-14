@@ -1,8 +1,9 @@
 <script setup lang="ts">
 // Preview mode: the sliced toolpaths on the bed, a layer range slider on the right, the feature
-// legend bottom-left and view presets top-left.
+// legend bottom-left and view presets top-right, in the same place and style as Prepare's.
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { Box, Maximize, PanelTop, RectangleHorizontal } from 'lucide-vue-next'
+import { Scan } from 'lucide-vue-next'
+import ViewIcon from '@/viewport/ViewIcon.vue'
 import { app, blockingIssues, runSlice } from '@/stores/app'
 import Button from '@/ui/Button.vue'
 import IconButton from '@/ui/IconButton.vue'
@@ -83,12 +84,12 @@ const setView = (v: PreviewView): void => setPreviewView(v)
   <div class="preview">
     <div ref="host" class="canvas" />
 
-    <div class="tools">
-      <IconButton label="Isometric view" :active="activeView === 'iso'" @click="setView('iso')"><Box /></IconButton>
-      <IconButton label="Top view" :active="activeView === 'top'" @click="setView('top')"><PanelTop /></IconButton>
-      <IconButton label="Front view" :active="activeView === 'front'" @click="setView('front')"><RectangleHorizontal /></IconButton>
+    <div class="tools" role="toolbar" aria-label="Views">
+      <IconButton size="sm" label="Iso view" :active="activeView === 'iso'" @click="setView('iso')"><ViewIcon view="iso" /></IconButton>
+      <IconButton size="sm" label="Top view" :active="activeView === 'top'" @click="setView('top')"><ViewIcon view="top" /></IconButton>
+      <IconButton size="sm" label="Front view" :active="activeView === 'front'" @click="setView('front')"><ViewIcon view="front" /></IconButton>
       <span class="sep" />
-      <IconButton label="Fit to the print" @click="setView('fit')"><Maximize /></IconButton>
+      <IconButton size="sm" label="Fit to the print" @click="setView('fit')"><Scan /></IconButton>
     </div>
 
     <div v-if="result && stale" class="banner">Preview is from the previous slice</div>
@@ -133,8 +134,8 @@ const setView = (v: PreviewView): void => setPreviewView(v)
 }
 .tools {
   position: absolute;
-  top: 12px;
-  left: 12px;
+  top: 8px;
+  right: 8px;
   display: flex;
   align-items: center;
   gap: 2px;
@@ -142,11 +143,11 @@ const setView = (v: PreviewView): void => setPreviewView(v)
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
   background: var(--surface);
-  box-shadow: var(--shadow-pop);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
 }
 .sep {
   width: 1px;
-  height: 20px;
+  height: 16px;
   margin: 0 2px;
   background: var(--border);
 }

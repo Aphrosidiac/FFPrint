@@ -410,7 +410,7 @@ export function arrangeAll(): boolean {
   const fits = arrange(scene.objects)
   for (const o of scene.objects) dropOne(o)
   touch()
-  if (!fits) toast('info', 'Not everything fits on the bed. Objects in red are outside the printable area.')
+  if (!fits) toast('error', 'Not everything fits on the bed. Objects in red are outside the printable area.')
   return fits
 }
 

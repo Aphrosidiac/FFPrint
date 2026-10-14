@@ -61,6 +61,8 @@
   --bed: #d9dadd;
   --bed-grid: #c4c6ca;
   --bed-edge: #9ca0a6;
+  /* outline on colour swatches, so black spools show on dark surfaces and white ones on light */
+  --swatch-ring: rgb(0 0 0 / 0.16);
 }
 
 :root[data-theme='dark'] {
@@ -91,4 +93,5 @@
   --bed: #2a2c30;
   --bed-grid: #3a3c41;
   --bed-edge: #5b5e64;
+  --swatch-ring: rgb(255 255 255 / 0.3);
 }

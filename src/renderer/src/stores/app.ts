@@ -158,7 +158,7 @@ export async function addLoadedFiles(files: LoadedFile[]): Promise<void> {
   const fits = arrange(scene.objects)
   select(added.map((o) => o.id))
   app.mode = 'prepare'
-  if (!fits) toast('info', 'Not everything fits on the bed. Objects in red are outside the printable area.')
+  if (!fits) toast('error', 'Not everything fits on the bed. Objects in red are outside the printable area.')
   for (const o of added) if (o.position.z !== 0) dropToBed(o)
   // Remember what each file looks like for the Past models list (after layout, off the open path).
   setTimeout(() => {

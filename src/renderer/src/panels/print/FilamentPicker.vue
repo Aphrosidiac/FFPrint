@@ -106,7 +106,7 @@ onBeforeUnmount(() => {
   height: 20px;
   flex: none;
   border-radius: 50%;
-  box-shadow: inset 0 0 0 1px var(--border-strong);
+  box-shadow: inset 0 0 0 1px var(--swatch-ring);
 }
 .swatch.sm {
   width: 16px;

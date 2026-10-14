@@ -18,6 +18,7 @@ import LimitsTable from './machine/LimitsTable.vue'
 import MachineSection from './machine/MachineSection.vue'
 import AutomationSection from './machine/AutomationSection.vue'
 import pkg from '../../../../package.json'
+import BackLink from '@/ui/BackLink.vue'
 
 const m = computed(() => app.machine)
 const state = computed(() => saveStatus.state)
@@ -96,7 +97,7 @@ const preview = computed(() => {
     name: 'benchy',
     quality: QUALITIES.find((q) => q.id === app.settings.quality)?.id ?? 'standard',
     material: MATERIALS.find((x) => x.id === f?.material)?.label ?? 'PLA',
-    date: new Date().toISOString().slice(0, 10)
+    date: new Date().toLocaleDateString('en-CA')
   }
   const filled = (pattern.value.trim() || '{name}').replace(/\{(\w+)\}/g, (_, k: string) => vars[k] ?? '')
   const clean = filled.replace(/[^A-Za-z0-9_-]+/g, '_').replace(/_+/g, '_').replace(/^[_-]+|[_-]+$/g, '').slice(0, 48)
@@ -126,6 +127,7 @@ onBeforeUnmount(() => {
 <template>
   <div class="page">
     <div v-if="m" class="inner">
+      <BackLink />
       <header class="head">
         <div>
           <h1>Printer</h1>
@@ -253,7 +255,7 @@ onBeforeUnmount(() => {
   overflow: auto;
 }
 .inner {
-  max-width: 880px;
+  max-width: 1040px;
   margin: 0 auto;
   padding: 24px 24px 48px;
 }
@@ -265,6 +267,7 @@ onBeforeUnmount(() => {
   padding-bottom: 20px;
 }
 h1 {
+  font-family: var(--font-display);
   font-size: var(--fs-20);
   font-weight: 600;
 }

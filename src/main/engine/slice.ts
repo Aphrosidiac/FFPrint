@@ -9,7 +9,7 @@ import { BASE_MACHINE, MATERIALS, QUALITIES, baseProcessName, resolveOverrides, 
 import { CREALITY_TUNING } from '@shared/tuning'
 import type { Filament, MachineSettings, SliceRequest, SliceResult } from '@shared/types'
 import { dataPaths } from '../store'
-import { applyPattern, parseStats, safeFileName } from './gcode'
+import { applyPattern, localDate, parseStats, safeFileName } from './gcode'
 import { engine } from './paths'
 import { buildConfigs } from './profiles'
 import { writeSceneStls } from './sceneFiles'
@@ -155,7 +155,7 @@ export async function slice(
         name: req.jobName,
         quality: quality?.label ?? '',
         material: material.label.replace(/\s+/g, ''),
-        date: new Date().toISOString().slice(0, 10)
+        date: localDate()
       })
     ),
     stats: {
