@@ -13,9 +13,35 @@ const allShown = computed(() => rows.value.every((r) => !preview.hidden[r.type])
 function toggle(type: string): void {
   setFeatureVisible(type, !!preview.hidden[type])
 }
+/** Double-click: show only this feature (double-click it again to bring everything back). */
+function solo(type: string): void {
+  const alone = rows.value.every((r) => r.type === type || preview.hidden[r.type])
+  if (alone) return showAllFeatures()
+  for (const r of rows.value) setFeatureVisible(r.type, r.type === type)
+}
 function toggleAll(): void {
   if (!allShown.value) return showAllFeatures()
   for (const r of rows.value) setFeatureVisible(r.type, false)
+}
+/** What each feature is, in plain words (legend tooltip). */
+const HELP: Record<string, string> = {
+  'Outer wall': 'the visible outside skin of the part.',
+  'Inner wall': 'walls just inside the outer wall, for strength.',
+  'Overhang wall': 'outer wall printed over air on a steep overhang (printed slower).',
+  'Sparse infill': 'the light inner fill pattern.',
+  'Internal solid infill': 'fully solid layers inside the part, under top surfaces.',
+  'Top surface': 'the solid layers that close any upward-facing area. On curved parts every gentle slope gets a few.',
+  'Bottom surface': 'solid layers that close downward-facing areas, including the first layer.',
+  Bridge: 'lines stretched across a gap with nothing underneath.',
+  'Internal Bridge': 'bridging lines inside the part, over sparse infill.',
+  'Gap infill': 'thin fill for gaps too narrow for a full line.',
+  Ironing: 'a smoothing pass over the top surface.',
+  Support: 'temporary structure holding up overhangs; snapped off after printing.',
+  'Support interface': 'the dense top of a support that touches the part.',
+  'Support transition': 'where tree support branches join.',
+  Skirt: 'an outline around the print that primes the nozzle.',
+  Brim: 'extra lines attached to the first layer so the part does not lift.',
+  Custom: 'the start and end routine (purge line, park).'
 }
 const share = (s: number): string => (s < 0.01 ? '<1%' : `${Math.round(s * 100)}%`)
 </script>
@@ -37,8 +63,10 @@ const share = (s: number): string => (s < 0.01 ? '<1%' : `${Math.round(s * 100)}
       class="row"
       :class="{ off: preview.hidden[r.type] }"
       :aria-pressed="!preview.hidden[r.type]"
-      :title="`${preview.hidden[r.type] ? 'Show' : 'Hide'} ${r.label.toLowerCase()} · ${duration(r.time)} · ${(r.length / 1000).toFixed(2)} m of path`"
+      :title="`${r.label}: ${HELP[r.type] ?? ''}
+${duration(r.time)} · ${(r.length / 1000).toFixed(2)} m of path`"
       @click="toggle(r.type)"
+      @dblclick="solo(r.type)"
     >
       <span class="sw" :style="{ background: preview.hidden[r.type] ? 'transparent' : r.color, borderColor: r.color }" />
       <span class="name">{{ r.label }}</span>
@@ -49,10 +77,18 @@ const share = (s: number): string => (s < 0.01 ? '<1%' : `${Math.round(s * 100)}
       <span class="name">Travel</span>
       <span class="val">{{ preview.travel ? 'On' : 'Off' }}</span>
     </button>
+    <p class="tip">Click to hide · double-click to show only that</p>
   </div>
 </template>
 
 <style scoped>
+.tip {
+  margin-top: 4px;
+  padding: 6px 4px 0;
+  border-top: 1px solid var(--border);
+  font-size: var(--fs-11);
+  color: var(--text-3);
+}
 .legend {
   width: 208px;
   padding: 8px;

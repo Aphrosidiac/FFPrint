@@ -1,6 +1,7 @@
 // The preview's feature palette: the only colours FF Print defines outside styles/tokens.css.
-// Neutral and distinct, not loud: walls warm, infill muted, solid layers cool, supports grey,
-// adhesion green, travel a thin light blue. Same values in light and dark themes (mid-tones that
+// Every feature gets its own hue (no two reds side by side), following the colours slicer users know:
+// walls orange / yellow, top surface red-pink, overhang walls blue, infill dark maroon, solid infill
+// purple, bridges teal, supports grey, adhesion green, travel a thin light blue. Same values in light and dark themes (mid-tones that
 // read on both viewport backgrounds).
 
 export interface FeatureStyle {
@@ -13,12 +14,12 @@ export interface FeatureStyle {
 const STYLES: Record<string, FeatureStyle> = {
   'Outer wall': { label: 'Outer wall', color: '#e08a3c', order: 1 },
   'Inner wall': { label: 'Inner wall', color: '#e3bb5c', order: 2 },
-  'Overhang wall': { label: 'Overhang wall', color: '#c2553f', order: 3 },
-  'Sparse infill': { label: 'Sparse infill', color: '#a5625b', order: 4 },
+  'Overhang wall': { label: 'Overhang wall', color: '#4a7fd6', order: 3 },
+  'Sparse infill': { label: 'Sparse infill', color: '#7f2f35', order: 4 },
   'Internal solid infill': { label: 'Solid infill', color: '#8a6ca8', order: 5 },
-  'Top surface': { label: 'Top surface', color: '#d9675f', order: 6 },
-  'Bottom surface': { label: 'Bottom surface', color: '#6e8fb0', order: 7 },
-  Bridge: { label: 'Bridge', color: '#4f9c9a', order: 8 },
+  'Top surface': { label: 'Top surface', color: '#ec4f6e', order: 6 },
+  'Bottom surface': { label: 'Bottom surface', color: '#5aa6c4', order: 7 },
+  Bridge: { label: 'Bridge', color: '#2fa58a', order: 8 },
   'Internal Bridge': { label: 'Internal bridge', color: '#7cb3ab', order: 9 },
   'Gap infill': { label: 'Gap infill', color: '#cfc8b8', order: 10 },
   Ironing: { label: 'Ironing', color: '#c79abd', order: 11 },
