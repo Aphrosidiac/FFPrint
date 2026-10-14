@@ -5,3 +5,4 @@ engine/
 *.log
 .DS_Store
 build/engine/
+tests/fixtures/twist120.stl
