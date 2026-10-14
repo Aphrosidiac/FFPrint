@@ -2,11 +2,10 @@
 import { redo, undo } from '@/stores/undo'
 // Prepare mode's 3D workspace: the bed, the parts, camera views, tools, keyboard and context menu.
 import { onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
-import { ArrowDownToLine, Copy, FolderOpen, Move, Rotate3d, Scale3d, Scan, Trash2, Crosshair, ArrowDownFromLine } from 'lucide-vue-next'
-import { app, openDialog } from '@/stores/app'
+import { ArrowDownToLine, Copy, Move, Rotate3d, Scale3d, Scan, Trash2, Crosshair, ArrowDownFromLine } from 'lucide-vue-next'
+import { app } from '@/stores/app'
 import { hasObjects, meshes, scene, selected } from '@/stores/scene'
 import IconButton from '@/ui/IconButton.vue'
-import Button from '@/ui/Button.vue'
 import ViewIcon from './ViewIcon.vue'
 import { Workspace3D, type ContextMenuRequest } from './scene3d'
 import { arrangeAll, centreOnBed, clearSelection, deleteObjects, dropToBed, duplicateObjects, selectAll, setCameraView, setLayFlatMode, setTool } from './actions'
@@ -194,14 +193,6 @@ function run(action: () => void): void {
       <span class="key">Esc</span>
     </div>
 
-    <div v-if="!hasObjects" class="empty">
-      <div class="empty-card" @pointerdown.stop>
-        <strong>Drop STL, OBJ or 3MF files here</strong>
-        <span>or open them from your computer</span>
-        <Button variant="primary" @click="openDialog"><FolderOpen />Open files</Button>
-      </div>
-    </div>
-
     <div v-if="menu" class="ctx" role="menu" :style="menuStyle(menu)" @contextmenu.prevent>
       <button type="button" role="menuitem" @click="run(() => duplicateObjects(selIds()))"><Copy /><span>Duplicate</span><kbd>Ctrl+D</kbd></button>
       <button type="button" role="menuitem" @click="run(() => setLayFlatMode(true))"><ArrowDownToLine /><span>Lay on face</span><kbd>L</kbd></button>
@@ -290,34 +281,6 @@ kbd {
   border-radius: var(--r-sm);
 }
 
-.empty {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  pointer-events: none;
-}
-.empty-card {
-  pointer-events: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 24px 32px;
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  background: var(--surface);
-  box-shadow: var(--shadow-pop);
-}
-.empty-card strong {
-  font-size: var(--fs-14);
-  font-weight: 600;
-}
-.empty-card span {
-  font-size: var(--fs-12);
-  color: var(--text-2);
-  margin-bottom: 12px;
-}
 
 .ctx {
   position: absolute;

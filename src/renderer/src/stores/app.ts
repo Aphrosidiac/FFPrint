@@ -94,6 +94,16 @@ export async function init(): Promise<void> {
     (id) => api.savePrefs({ lastFilamentId: id })
   )
   // Any change after a slice makes the result stale (it is kept so the preview still shows it).
+  // An empty bed has nothing to show: drop the old slice so no stale result card lingers.
+  watch(
+    () => scene.objects.length,
+    (n) => {
+      if (n === 0 && app.slice.status !== 'slicing') {
+        app.slice = { status: 'idle', result: null, error: '' }
+        app.mode = 'prepare'
+      }
+    }
+  )
   // timeFactor only changes the shown estimate, not the G-code, so it does not make a slice stale.
   watch([() => scene.revision, () => app.settings, () => app.filamentId, () => (app.machine ? { ...app.machine, timeFactor: 1 } : null)], () => {
     if (app.slice.status === 'done') app.slice.status = 'stale'
