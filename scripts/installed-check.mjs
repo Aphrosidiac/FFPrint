@@ -52,6 +52,8 @@ console.log(`- screenshot ${shot}`)
 const drives = await call('list_drives')
 console.log(`- drives: ${drives.map((d) => `${d.root} ${d.label} card=${d.likelyPrinterCard}`).join(', ') || 'none'}`)
 await call('clear_bed')
+// keep the test model out of Fakhrul's Past models list
+await call('ui_eval', { code: `await window.ffprint.invoke('hidePastModel', [{ kind: 'file', path: ${JSON.stringify(model)} }]); return true` })
 await call('navigate', { mode: 'prepare' })
 const after = await call('get_state')
 assert.equal(after.objects.length, 0)
