@@ -2,18 +2,33 @@
 // on a transparent background. No bed, grid, gizmo or selection marks. Rendered with its own small
 // offscreen renderer so it works whether or not the Prepare viewport is on screen.
 
-import { Box3, DirectionalLight, HemisphereLight, Mesh, MeshStandardMaterial, PerspectiveCamera, Scene, SRGBColorSpace, Vector3, WebGLRenderer } from 'three'
-import { meshes, objectMatrix, scene as store, worldBox } from '@/stores/scene'
+import { Box3, BufferGeometry, DirectionalLight, HemisphereLight, Matrix4, Mesh, MeshStandardMaterial, PerspectiveCamera, Scene, SRGBColorSpace, Vector3, WebGLRenderer } from 'three'
+import { meshes, objectMatrix, scene as store } from '@/stores/scene'
 import { readColors } from './colors'
 
 const W = 320
 const H = 240
 const SS = 2 // supersampling factor
 
+export interface ThumbItem {
+  geometry: BufferGeometry
+  matrix?: Matrix4
+}
+
 /** PNG data URL (320 x 240) of the visible parts, or '' when there is nothing to draw. */
 export function captureThumbnail(): string {
-  const objects = store.objects.filter((o) => o.visible && meshes.has(o.meshId))
-  if (!objects.length) return ''
+  return captureObjectsThumbnail(store.objects.filter((o) => o.visible).map((o) => o.id))
+}
+
+/** Thumbnail of just these objects (e.g. the parts of one file that was opened). */
+export function captureObjectsThumbnail(ids: string[]): string {
+  const objects = store.objects.filter((o) => ids.includes(o.id) && meshes.has(o.meshId))
+  return renderThumbnail(objects.map((o) => ({ geometry: meshes.get(o.meshId)!.geometry, matrix: objectMatrix(o) })))
+}
+
+/** Renders geometries (printer coordinates, Z up) from the standard 3/4 front view. */
+export function renderThumbnail(items: ThumbItem[]): string {
+  if (!items.length) return ''
 
   let renderer: WebGLRenderer | null = null
   try {
@@ -33,12 +48,14 @@ export function captureThumbnail(): string {
 
     const material = new MeshStandardMaterial({ color: readColors().object, roughness: 0.62, metalness: 0.02 })
     const box = new Box3()
-    for (const o of objects) {
-      const m = new Mesh(meshes.get(o.meshId)!.geometry, material)
+    for (const it of items) {
+      const m = new Mesh(it.geometry, material)
       m.matrixAutoUpdate = false
-      m.matrix.copy(objectMatrix(o))
+      if (it.matrix) m.matrix.copy(it.matrix)
+      m.matrixWorld.copy(m.matrix)
       s.add(m)
-      box.union(worldBox(o))
+      if (!it.geometry.boundingBox) it.geometry.computeBoundingBox()
+      box.union((it.geometry.boundingBox as Box3).clone().applyMatrix4(m.matrix))
     }
 
     const camera = new PerspectiveCamera(30, W / H, 1, 10000)

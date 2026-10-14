@@ -34,6 +34,8 @@ export const TOOLS: ToolSpec[] = [
   // ---- files
   { name: 'open_models', title: 'Open models', where: 'renderer', description: 'Add STL / OBJ / 3MF files (absolute paths) to the bed, or open an .ffprint project. New objects are arranged around existing ones.', shape: { paths: z.array(z.string()).min(1) } },
   { name: 'save_project', title: 'Save project', where: 'renderer', description: 'Save the bed, settings and filament as an .ffprint project at an absolute path.', shape: { path: z.string() } },
+  { name: 'list_past_models', title: 'Past models', where: 'renderer', readOnly: true, description: 'Everything opened or printed before (FF Print recents, printed jobs, Creality Print projects and downloads), newest first; what the empty bed shows. Thumbnails omitted.', shape: { search: z.string().optional() } },
+  { name: 'open_past_model', title: 'Open a past model', where: 'renderer', description: 'Put a past model back on the bed (a printed job reopens with its original settings).', shape: { id: z.string().describe('id from list_past_models') } },
   { name: 'list_recent', title: 'Recent files', where: 'main', readOnly: true, description: 'Recently opened files and projects.', shape: {} },
 
   // ---- objects

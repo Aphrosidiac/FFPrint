@@ -74,6 +74,8 @@ export interface Prefs {
   sdVolumeHint: string
   fileNamePattern: string
   recent: string[]
+  /** Paths (or job:<id>) removed from the Past models list; files themselves are never touched */
+  hiddenModels?: string[]
 }
 
 /** A mesh as sent to the engine: non-indexed triangles in model space (mm). */
@@ -160,4 +162,21 @@ export interface LoadedFile {
   name: string
   ext: 'stl' | 'obj' | '3mf' | 'ffprint'
   bytes: Uint8Array
+}
+
+/** A model from the past, shown when the bed is empty. */
+export interface PastModel {
+  id: string
+  kind: 'file' | 'job'
+  path: string
+  name: string
+  ext: string
+  /** ffprint = opened in FF Print, creality = Creality Print project/download, printed = saved job */
+  source: 'ffprint' | 'creality' | 'printed'
+  date: string
+  sizeBytes: number
+  /** PNG data URL, or null when none is cached yet */
+  thumbnail: string | null
+  historyId?: string
+  detail?: string
 }

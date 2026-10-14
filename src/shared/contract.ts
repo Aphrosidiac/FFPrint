@@ -8,6 +8,7 @@ import type {
   HistoryEntry,
   LoadedFile,
   MachineSettings,
+  PastModel,
   Prefs,
   PrintSettings,
   ProjectScene,
@@ -23,6 +24,12 @@ export interface Api {
   saveProjectDialog(project: ProjectScene, models: { file: string; bytes: Uint8Array }[], suggestedName: string): Promise<string | null>
   openProject(path: string): Promise<{ project: ProjectScene; models: { file: string; bytes: Uint8Array }[] }>
   recentFiles(): Promise<string[]>
+  /** Past models for the empty bed: FF Print recents, printed jobs, Creality Print projects. */
+  listPastModels(): Promise<PastModel[]>
+  hidePastModel(m: Pick<PastModel, 'kind' | 'path' | 'historyId'>): Promise<void>
+  saveModelThumbnail(path: string, dataUrl: string): Promise<void>
+  /** Bytes of a file without touching the recent list (background thumbnails). */
+  readModelBytes(path: string): Promise<Uint8Array>
   /** No dialog: write the project to an absolute path (automation). */
   saveProjectTo(path: string, project: ProjectScene, models: { file: string; bytes: Uint8Array }[]): Promise<string>
 

@@ -25,7 +25,8 @@ export function initStore(dir: string): void {
 
 export function readDoc<T>(name: string, fallback: () => T): T {
   try {
-    return JSON.parse(readFileSync(join(root, `${name}.json`), 'utf8')) as T
+    // strip a UTF-8 BOM (Windows tools add one when a file is edited by hand)
+    return JSON.parse(readFileSync(join(root, `${name}.json`), 'utf8').replace(/^\uFEFF/, '')) as T
   } catch {
     return fallback()
   }

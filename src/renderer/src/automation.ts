@@ -12,6 +12,7 @@ import * as O from '@/stores/outputActions'
 import * as S from '@/stores/settingsActions'
 import * as V from '@/viewport/actions'
 import * as U from '@/stores/undo'
+import * as PM from '@/stores/pastModels'
 import { app, cancelSlice, currentFilament, openPaths, recordJob, reprint, runSlice } from '@/stores/app'
 import { clearScene, meshes, scene, toProject, type SceneObject } from '@/stores/scene'
 
@@ -64,6 +65,18 @@ const handlers: Record<string, Handler> = {
     const before = new Set(scene.objects.map((o) => o.id))
     await openPaths(paths)
     return { added: scene.objects.filter((o) => !before.has(o.id)).map((o) => V.objectInfo(o.id)), total: scene.objects.length }
+  },
+  list_past_models: async ({ search }) => {
+    await PM.refreshPast()
+    const q = String(search ?? '').toLowerCase()
+    return PM.past.items.filter((m) => !q || m.name.toLowerCase().includes(q)).map(({ thumbnail, ...m }) => ({ ...m, hasThumbnail: !!thumbnail }))
+  },
+  open_past_model: async ({ id }) => {
+    if (!PM.past.items.length) await PM.refreshPast()
+    const m = PM.past.items.find((x) => x.id === id)
+    if (!m) throw new Error(`No past model "${id}". Call list_past_models.`)
+    await PM.openPast(m)
+    return { objects: V.listObjects() }
   },
   save_project: async ({ path }) => {
     if (!scene.objects.length) throw new Error('The bed is empty.')

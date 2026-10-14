@@ -7,6 +7,7 @@ import type { Drive, Filament, HistoryEntry, LoadedFile, MachineSettings, Prefs,
 import { api, errorText, onEvent } from '@/lib/api'
 import { arrange } from '@/lib/arrange'
 import { designerIntent } from '@/lib/designer'
+import { captureObjectsThumbnail } from '@/viewport/capture'
 import { parseFile, parseModel } from '@/lib/loaders'
 import { initUndo, resetUndo } from './undo'
 import { addMesh, addObject, clearScene, dropToBed, fromMatrix, issues, scene, select, toProject, toScenePayload, type SceneObject } from './scene'
@@ -122,6 +123,7 @@ export async function refreshDrives(): Promise<void> {
 
 export async function addLoadedFiles(files: LoadedFile[]): Promise<void> {
   const added: SceneObject[] = []
+  const thumbs: { path: string; ids: string[] }[] = []
   const bedWasEmpty = scene.objects.length === 0
   let intent: { name: string; patch: Partial<PrintSettings>; notes: string[] } | null = null
   for (const f of files) {
@@ -131,10 +133,14 @@ export async function addLoadedFiles(files: LoadedFile[]): Promise<void> {
     }
     try {
       const parsed = parseFile(f)
+      const ids: string[] = []
       for (const model of parsed.models) {
         const mesh = addMesh(model.name, model.geometry)
-        added.push(addObject(mesh.id, model.name))
+        const o = addObject(mesh.id, model.name)
+        added.push(o)
+        ids.push(o.id)
       }
+      thumbs.push({ path: f.path, ids })
       if (parsed.projectSettings && !intent) {
         const d = designerIntent(parsed.projectSettings, app.settings)
         if (d) intent = { name: f.name, ...d }
@@ -150,6 +156,13 @@ export async function addLoadedFiles(files: LoadedFile[]): Promise<void> {
   app.mode = 'prepare'
   if (!fits) toast('info', 'Not everything fits on the bed. Objects in red are outside the printable area.')
   for (const o of added) if (o.position.z !== 0) dropToBed(o)
+  // Remember what each file looks like for the Past models list (after layout, off the open path).
+  setTimeout(() => {
+    for (const t of thumbs) {
+      const url = captureObjectsThumbnail(t.ids)
+      if (url) void api.saveModelThumbnail(t.path, url).catch(() => {})
+    }
+  }, 300)
   // A project's own print settings (the designer's intent) apply when it starts a fresh bed.
   if (intent && bedWasEmpty) {
     const before = JSON.parse(JSON.stringify(app.settings)) as PrintSettings

@@ -8,6 +8,7 @@ import { arrangeAll, deleteObjects, renameObject, selectObjects, setVisible } fr
 import IconButton from '@/ui/IconButton.vue'
 import Button from '@/ui/Button.vue'
 import TransformSection from './object/TransformSection.vue'
+import PastModels from './object/PastModels.vue'
 
 const editing = ref<string | null>(null)
 const draft = ref('')
@@ -82,9 +83,8 @@ function toggleVisible(o: SceneObject): void {
     </header>
 
     <div v-if="!scene.objects.length" class="none">
-      <p>No models on the bed.</p>
-      <p class="subtle">Open or drop STL, OBJ or 3MF files.</p>
-      <Button size="sm" @click="openDialog"><Plus />Add models</Button>
+      <Button size="sm" block @click="openDialog"><Plus />Add models</Button>
+      <PastModels />
     </div>
 
     <ul v-else class="list" role="listbox" aria-multiselectable="true" aria-label="Objects">
@@ -165,14 +165,8 @@ function toggleVisible(o: SceneObject): void {
 .none {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
+  gap: 16px;
   padding: 4px 16px 16px;
-  font-size: var(--fs-13);
-}
-.none .subtle {
-  font-size: var(--fs-12);
-  margin-bottom: 8px;
 }
 .list {
   list-style: none;
