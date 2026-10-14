@@ -244,11 +244,11 @@ const handlers: Record<string, Handler> = {
     return { totalLines: lines.length, fromLine: from, lines: lines.slice(from - 1, from - 1 + n) }
   },
   get_preview_info: async () => {
-    if (app.mode !== 'preview') await P.openPreview()
+    await P.openPreview()
     return plain(P.getPreviewInfo())
   },
   set_layer_range: async ({ min, max }) => {
-    if (app.mode !== 'preview') await P.openPreview()
+    await P.openPreview()
     const info = P.getPreviewInfo() as unknown as { layerCount?: number; range?: [number, number] }
     const lo = min !== undefined ? min - 1 : (info.range?.[0] ?? 0)
     const hi = max !== undefined ? max - 1 : (info.range?.[1] ?? (info.layerCount ?? 1) - 1)
@@ -256,7 +256,7 @@ const handlers: Record<string, Handler> = {
     return { min: a + 1, max: b + 1 }
   },
   set_feature_visible: async ({ feature, visible }) => {
-    if (app.mode !== 'preview') await P.openPreview()
+    await P.openPreview()
     P.setFeatureVisible(feature, visible)
     return plain(P.getPreviewInfo())
   },
