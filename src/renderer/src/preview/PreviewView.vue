@@ -223,8 +223,8 @@ const setView = (v: PreviewView): void => setPreviewView(v)
 }
 .slider {
   position: absolute;
-  right: 12px;
-  top: 12px;
-  bottom: 12px;
+  right: 14px;
+  top: 56px;
+  bottom: 16px;
 }
 </style>

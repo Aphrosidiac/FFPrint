@@ -1,13 +1,31 @@
 <script setup lang="ts">
 // Feature types with their colour, a show/hide toggle and their share of the print time.
-import { computed } from 'vue'
-import { Eye, EyeOff } from 'lucide-vue-next'
+import { computed, ref, watch } from 'vue'
+import { ChevronDown, ChevronUp, Eye, EyeOff } from 'lucide-vue-next'
 import { duration } from '@/lib/format'
 import { TRAVEL_COLOR } from './palette'
 import { setFeatureVisible, showAllFeatures } from './actions'
 import { preview } from './state'
 
 const rows = computed(() => preview.legend)
+
+// Collapsed by default to a slim strip of colour dots so the print stays in view; remembered.
+const KEY = 'ffprint.legendOpen'
+const open = ref(readOpen())
+function readOpen(): boolean {
+  try {
+    return localStorage.getItem(KEY) === '1'
+  } catch {
+    return false
+  }
+}
+watch(open, (v) => {
+  try {
+    localStorage.setItem(KEY, v ? '1' : '0')
+  } catch {
+    // storage unavailable: the choice just isn't remembered
+  }
+})
 const allShown = computed(() => rows.value.every((r) => !preview.hidden[r.type]))
 
 function toggle(type: string): void {
@@ -47,7 +65,14 @@ const share = (s: number): string => (s < 0.01 ? '<1%' : `${Math.round(s * 100)}
 </script>
 
 <template>
-  <div class="legend">
+  <button v-if="!open" type="button" class="chip" title="Show the feature list" @click="open = true">
+    <span class="dots">
+      <span v-for="r in rows" :key="r.type" class="dot" :class="{ off: preview.hidden[r.type] }" :style="{ background: preview.hidden[r.type] ? 'transparent' : r.color, borderColor: r.color }" />
+    </span>
+    <span class="chip-label">Features</span>
+    <ChevronUp class="chev" />
+  </button>
+  <div v-else class="legend">
     <div class="head">
       <button type="button" class="all" :title="allShown ? 'Hide all' : 'Show all'" @click="toggleAll">
         <EyeOff v-if="allShown" />
@@ -55,6 +80,7 @@ const share = (s: number): string => (s < 0.01 ? '<1%' : `${Math.round(s * 100)}
       </button>
       <span class="section-title">Features</span>
       <span class="col">Time</span>
+      <button type="button" class="all" title="Collapse" aria-label="Collapse the feature list" @click="open = false"><ChevronDown /></button>
     </div>
     <button
       v-for="r in rows"
@@ -82,6 +108,38 @@ ${duration(r.time)} · ${(r.length / 1000).toFixed(2)} m of path`"
 </template>
 
 <style scoped>
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 8px 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: var(--surface);
+  box-shadow: var(--shadow-pop);
+  color: var(--text-2);
+  font-size: var(--fs-12);
+  font-weight: 500;
+  cursor: pointer;
+}
+.chip:hover {
+  color: var(--text);
+}
+.dots {
+  display: flex;
+  gap: 3px;
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border: 1px solid;
+  border-radius: 50%;
+}
+.chev {
+  width: 14px;
+  height: 14px;
+}
 .tip {
   margin-top: 4px;
   padding: 6px 4px 0;

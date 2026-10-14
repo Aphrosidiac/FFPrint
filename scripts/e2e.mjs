@@ -88,6 +88,16 @@ try {
   await page.evaluate((id) => window.__ff.reprint(id), history[0].id)
   await page.waitForFunction(() => window.__ff.scene.objects.length === 1 && window.__ff.app.mode === 'prepare')
 
+  step('pages: Esc and the back button return to the workspace')
+  for (const pg of ['filaments', 'history', 'machine']) {
+    await page.evaluate((p) => (window.__ff.app.page = p), pg)
+    await page.keyboard.press('Escape')
+    assert.equal(await page.evaluate(() => window.__ff.app.page), 'workspace', `Esc leaves ${pg}`)
+  }
+  await page.evaluate(() => (window.__ff.app.page = 'filaments'))
+  await page.locator('.back').click()
+  assert.equal(await page.evaluate(() => window.__ff.app.page), 'workspace')
+
   step('settings persisted across reload')
   await page.evaluate(() => {
     window.__ff.app.settings.infill = 42

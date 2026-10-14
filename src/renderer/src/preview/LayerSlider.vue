@@ -115,14 +115,16 @@ function play(): void {
 
 <template>
   <div class="slider" @wheel.prevent="onWheel">
-    <div class="readout">
-      <div class="layer num" title="Highest layer shown">{{ top + 1 }}<span class="of"> / {{ last + 1 }}</span></div>
-      <div class="z num" title="Height of this layer">{{ topInfo ? topInfo.z.toFixed(2) : '0.00' }} mm</div>
-      <div v-if="topInfo && topInfo.time > 0" class="t num" title="Approximate time for this layer">{{ duration(topInfo.time) }}</div>
-    </div>
     <div ref="track" class="track" @pointerdown.self="onTrackDown">
       <div class="rail" />
       <div class="fill" :style="{ top: pct(top) + '%', bottom: 100 - pct(bottom) + '%' }" />
+      <!-- the readout rides next to the top handle instead of sitting in a panel -->
+      <div class="tag hi-tag" :style="{ top: pct(top) + '%' }">
+        <span class="layer num">{{ top + 1 }}<span class="of">/{{ last + 1 }}</span></span>
+        <span class="z num">{{ topInfo ? topInfo.z.toFixed(2) : '0.00' }} mm</span>
+        <span v-if="topInfo && topInfo.time > 0" class="t num">{{ duration(topInfo.time) }}</span>
+      </div>
+      <div v-if="bottom > 0" class="tag lo-tag num" :style="{ top: pct(bottom) + '%' }">{{ bottom + 1 }}</div>
       <button
         type="button"
         class="handle hi"
@@ -154,63 +156,27 @@ function play(): void {
         @keydown="onKey($event, 'lo')"
       />
     </div>
-    <div class="foot">
-      <div class="lo-label num" title="Lowest layer shown">{{ bottom + 1 }}</div>
-      <button type="button" class="play" :aria-label="playing ? 'Pause' : 'Play through the layers'" :title="playing ? 'Pause' : 'Play through the layers'" @click="play">
-        <Pause v-if="playing" />
-        <Play v-else />
-      </button>
-    </div>
+    <button type="button" class="play" :aria-label="playing ? 'Pause' : 'Play through the layers'" :title="playing ? 'Pause' : 'Play through the layers'" @click="play">
+      <Pause v-if="playing" />
+      <Play v-else />
+    </button>
   </div>
 </template>
 
 <style scoped>
+/* No panel: a slim track on the viewport edge; the numbers ride beside the handles. */
 .slider {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 72px;
-  padding: 8px 0;
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  background: var(--surface);
-  box-shadow: var(--shadow-pop);
+  width: 28px;
   user-select: none;
-}
-.readout {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0;
-  padding: 0 4px 8px;
-  width: 100%;
-  border-bottom: 1px solid var(--border);
-  text-align: center;
-}
-.layer {
-  font-size: var(--fs-14);
-  font-weight: 600;
-  line-height: 20px;
-}
-.of {
-  font-size: var(--fs-11);
-  font-weight: 400;
-  color: var(--text-3);
-}
-.z,
-.t {
-  font-size: var(--fs-11);
-  line-height: 16px;
-  color: var(--text-2);
-}
-.t {
-  color: var(--text-3);
 }
 .track {
   position: relative;
   flex: 1;
-  width: 32px;
-  margin: 16px 0;
+  width: 28px;
+  margin: 10px 0 8px;
   cursor: pointer;
   touch-action: none;
 }
@@ -235,58 +201,73 @@ function play(): void {
 .handle {
   position: absolute;
   left: 50%;
-  width: 24px;
-  height: 12px;
-  margin: -6px 0 0 -12px;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
   padding: 0;
-  border: 1px solid var(--border-strong);
-  border-radius: 6px;
+  border: 2px solid var(--border-strong);
+  border-radius: 50%;
   background: var(--surface);
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.18);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.3);
   cursor: grab;
   touch-action: none;
 }
 .handle.hi {
   border-color: var(--accent);
-  border-width: 2px;
 }
 .handle:active {
   cursor: grabbing;
 }
-.handle:hover {
-  background: var(--surface-2);
-}
-.foot {
+.tag {
+  position: absolute;
+  right: 22px;
+  transform: translateY(-50%);
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  width: 100%;
-  padding-top: 8px;
-  border-top: 1px solid var(--border);
-}
-.lo-label {
+  align-items: baseline;
+  gap: 6px;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
+  white-space: nowrap;
+  pointer-events: none;
   font-size: var(--fs-11);
   color: var(--text-2);
-  line-height: 16px;
+}
+.layer {
+  font-size: var(--fs-12);
+  font-weight: 600;
+  color: var(--text);
+}
+.of {
+  font-weight: 400;
+  color: var(--text-3);
+}
+.t {
+  color: var(--text-3);
+}
+.lo-tag {
+  color: var(--text-2);
 }
 .play {
   display: grid;
   place-items: center;
   width: 28px;
   height: 28px;
-  border: 0;
-  border-radius: var(--r);
-  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface);
   color: var(--text-2);
   cursor: pointer;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
 }
 .play:hover {
-  background: var(--surface-3);
   color: var(--text);
+  background: var(--surface-3);
 }
 .play svg {
-  width: 14px;
-  height: 14px;
+  width: 13px;
+  height: 13px;
 }
 </style>

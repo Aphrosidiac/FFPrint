@@ -13,11 +13,20 @@ import FilamentsPage from '@/pages/FilamentsPage.vue'
 import MachinePage from '@/pages/MachinePage.vue'
 import HistoryPage from '@/pages/HistoryPage.vue'
 import Toasts from '@/ui/Toasts.vue'
+import { ArrowLeft } from 'lucide-vue-next'
 
 const dragging = ref(false)
 let dragDepth = 0
 
 function onKey(e: KeyboardEvent): void {
+  // Esc leaves Filaments / History / Printer (unless a dialog or a field has the key).
+  if (e.key === 'Escape' && app.page !== 'workspace' && !document.querySelector('dialog[open]')) {
+    const t = e.target as HTMLElement | null
+    if (!t?.closest('input, textarea, select')) {
+      app.page = 'workspace'
+      return
+    }
+  }
   if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey || document.querySelector('dialog[open]')) return
   const k = e.key.toLowerCase()
   if (k === 'o') {
@@ -75,9 +84,12 @@ function onDrop(e: DragEvent): void {
           <SliceBar />
         </aside>
       </template>
-      <FilamentsPage v-else-if="app.page === 'filaments'" />
-      <MachinePage v-else-if="app.page === 'machine'" />
-      <HistoryPage v-else-if="app.page === 'history'" />
+      <div v-else class="page">
+        <button type="button" class="back" title="Back to the workspace (Esc)" @click="app.page = 'workspace'"><ArrowLeft /><span>Back to workspace</span></button>
+        <FilamentsPage v-if="app.page === 'filaments'" />
+        <MachinePage v-else-if="app.page === 'machine'" />
+        <HistoryPage v-else-if="app.page === 'history'" />
+      </div>
     </main>
     <div v-if="dragging" class="drop">
       <div class="drop-card">
@@ -123,6 +135,47 @@ function onDrop(e: DragEvent): void {
   display: flex;
   flex-direction: column;
   min-height: 0;
+}
+.page {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+.page > :not(.back) {
+  flex: 1;
+  min-width: 0;
+}
+/* Narrow windows: page content would sit under the back button. */
+@media (max-width: 1400px) {
+  .page > :not(.back) {
+    padding-top: 44px;
+  }
+}
+.back {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px 0 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--fs-13);
+  font-weight: 500;
+  cursor: pointer;
+}
+.back:hover {
+  background: var(--surface-3);
+}
+.back svg {
+  width: 16px;
+  height: 16px;
 }
 .drop {
   position: fixed;
