@@ -1,6 +1,7 @@
 import { createApp } from 'vue'
 import App from './App.vue'
-import { app, openPaths, runSlice } from './stores/app'
+import { initAutomation } from './automation'
+import { app, openPaths, recordJob, reprint, runSlice } from './stores/app'
 import { scene } from './stores/scene'
 import './styles/tokens.css'
 import './styles/base.css'
@@ -11,9 +12,12 @@ import './styles/base.css'
   scene,
   openPaths,
   runSlice,
+  recordJob,
+  reprint,
   setTheme: (t: 'light' | 'dark' | 'system') => {
     if (app.prefs) app.prefs.theme = t
   }
 }
 
+initAutomation()
 createApp(App).mount('#app')

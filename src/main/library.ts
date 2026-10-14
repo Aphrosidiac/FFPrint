@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto'
 import { DEFAULT_END_GCODE, DEFAULT_START_GCODE, MACHINE } from '@shared/machine'
 import { MATERIALS } from '@shared/settings'
 import type { Filament, MachineSettings, Material, Prefs, PrintSettings, Setup } from '@shared/types'
+import seeds from '@shared/filament-seeds.json'
 import { filamentBase, first } from './engine/profiles'
 import { engine } from './engine/paths'
 import { readDoc, writeDoc } from './store'
@@ -49,13 +50,18 @@ export function filamentFromMaterial(material: Material, name?: string): Filamen
   }
 }
 
+/**
+ * First run: the library starts with Creality Print 7.3's own Ender-3 V3 SE filament presets
+ * (src/shared/filament-seeds.json, imported by scripts/import-creality-filaments.mjs), Hyper PLA first.
+ */
+export function seedFilaments(): Filament[] {
+  return (seeds as (Omit<Filament, 'id'> & { source?: unknown })[]).map(({ source: _source, ...f }) => ({ ...f, id: randomUUID() }))
+}
+
 export function getFilaments(): Filament[] {
   const list = readDoc<Filament[] | null>('filaments', () => null)
   if (list && list.length) return list
-  return writeDoc(
-    'filaments',
-    MATERIALS.map((m) => filamentFromMaterial(m.id))
-  )
+  return writeDoc('filaments', seedFilaments())
 }
 
 export function saveFilament(f: Filament): Filament[] {

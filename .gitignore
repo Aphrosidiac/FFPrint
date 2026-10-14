@@ -4,3 +4,4 @@ release/
 engine/
 *.log
 .DS_Store
+build/engine/

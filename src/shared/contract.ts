@@ -23,6 +23,8 @@ export interface Api {
   saveProjectDialog(project: ProjectScene, models: { file: string; bytes: Uint8Array }[], suggestedName: string): Promise<string | null>
   openProject(path: string): Promise<{ project: ProjectScene; models: { file: string; bytes: Uint8Array }[] }>
   recentFiles(): Promise<string[]>
+  /** No dialog: write the project to an absolute path (automation). */
+  saveProjectTo(path: string, project: ProjectScene, models: { file: string; bytes: Uint8Array }[]): Promise<string>
 
   // engine
   slice(req: SliceRequest): Promise<SliceResult>
@@ -34,6 +36,8 @@ export interface Api {
   listDrives(): Promise<Drive[]>
   saveToDrive(sliceId: string, driveRoot: string, fileName: string): Promise<{ path: string }>
   saveGcodeAs(sliceId: string, fileName: string): Promise<{ path: string } | null>
+  /** No dialog: copy the G-code to an absolute path (automation). */
+  saveGcodeTo(sliceId: string, path: string): Promise<{ path: string }>
   ejectDrive(driveRoot: string): Promise<{ ok: boolean; message?: string }>
 
   // library + settings
@@ -56,6 +60,9 @@ export interface Api {
   setActualTime(id: string, seconds: number | null): Promise<{ history: HistoryEntry[]; machine: MachineSettings }>
   deleteHistory(id: string): Promise<HistoryEntry[]>
   openHistoryProject(id: string): Promise<{ project: ProjectScene; models: { file: string; bytes: Uint8Array }[] }>
+
+  // automation
+  automationStatus(): Promise<{ enabled: boolean; running: boolean; port: number; url: string; token: string; command: string }>
 
   // window
   setTitleBarColors(color: string, symbolColor: string): Promise<void>

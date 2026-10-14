@@ -7,6 +7,7 @@ interface Bridge {
   invoke: (name: string, args: unknown[]) => Promise<unknown>
   onEvent: (fn: (name: string, payload: unknown) => void) => () => void
   pathForFile: (file: File) => string
+  onAutomation: (fn: (command: string, args: unknown) => Promise<unknown>) => void
 }
 
 declare global {

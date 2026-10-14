@@ -10,6 +10,7 @@ import * as files from './files'
 import * as history from './history'
 import * as lib from './library'
 import * as sd from './sd'
+import { automationStatus } from './automation/server'
 
 function sliceOrThrow(id: string): NonNullable<ReturnType<typeof getSlice>> {
   const r = getSlice(id)
@@ -24,6 +25,7 @@ export function createApi(win: () => BrowserWindow | null): Api {
     saveProjectDialog: (project, models, name) => files.saveProjectDialog(win(), project, models, name),
     openProject: async (path) => files.openProject(path),
     recentFiles: async () => lib.getPrefs().recent,
+    saveProjectTo: async (path, project, models) => files.saveProjectTo(path, project, models),
 
     slice: async (req) => {
       const filament = lib.getFilaments().find((f) => f.id === req.filamentId) ?? lib.getFilaments()[0]
@@ -52,7 +54,13 @@ export function createApi(win: () => BrowserWindow | null): Api {
       copyFileSync(r.gcodePath, res.filePath)
       return { path: res.filePath }
     },
+    saveGcodeTo: async (sliceId, path) => {
+      const target = /\.gcode$/i.test(path) ? path : `${path}.gcode`
+      copyFileSync(sliceOrThrow(sliceId).gcodePath, target)
+      return { path: target }
+    },
     ejectDrive: (root) => sd.ejectDrive(root),
+    automationStatus: async () => automationStatus(),
 
     getFilaments: async () => lib.getFilaments(),
     saveFilament: async (f) => lib.saveFilament(f),

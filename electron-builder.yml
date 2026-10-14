@@ -1,0 +1,38 @@
+appId: studio.ffdev.ffprint
+productName: FF Print
+directories:
+  buildResources: build
+  output: release/${version}
+# Only the built app goes into app.asar — never src/, tests, docs or configs.
+files:
+  - out/**
+  - package.json
+  - '!**/*.map'
+extraResources:
+  - from: build/engine/orca
+    to: engine/orca
+fileAssociations:
+  - ext: ffprint
+    name: FF Print project
+    description: FF Print project
+    role: Editor
+  - ext: stl
+    name: STL model
+    role: Viewer
+  - ext: 3mf
+    name: 3MF model
+    role: Viewer
+win:
+  executableName: FFPrint
+  icon: build/icon.png
+  target: [nsis]
+nsis:
+  artifactName: FF-Print-${version}-setup.${ext}
+  shortcutName: FF Print
+  uninstallDisplayName: FF Print
+  createDesktopShortcut: always
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  runAfterFinish: true
+npmRebuild: false
+publish: null

@@ -2,6 +2,8 @@ import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { app, BrowserWindow, nativeTheme, shell } from 'electron'
 import type { Events, EventName } from '@shared/contract'
+import { initAutomationBridge } from './automation/bridge'
+import { startAutomation } from './automation/server'
 import { initEngineDir } from './engine/paths'
 import { createApi, setupIpc } from './ipc'
 import { getPrefs } from './library'
@@ -75,12 +77,15 @@ if (!app.requestSingleInstanceLock()) {
 
   app.whenReady().then(() => {
     initStore(app.getPath('userData'))
-    initEngineDir(app.getAppPath(), process.resourcesPath, app.isPackaged)
+    // out/main/index.js -> repo root; robust whether launched via electron-vite or the built script
+    initEngineDir(join(__dirname, '..', '..'), process.resourcesPath, app.isPackaged)
     nativeTheme.themeSource = getPrefs().theme
     setupIpc(createApi(() => win))
+    initAutomationBridge()
     pendingFiles.push(...modelArgs(process.argv))
     createWindow()
     watchDrives(() => send('drives-changed', null))
+    startAutomation(() => win)
     app.on('activate', () => {
       if (!BrowserWindow.getAllWindows().length) createWindow()
     })

@@ -57,6 +57,13 @@ export function openProject(path: string): ReturnType<typeof unpackProject> {
   return r
 }
 
+export function saveProjectTo(path: string, project: ProjectScene, models: { file: string; bytes: Uint8Array }[]): string {
+  const target = /\.ffprint$/i.test(path) ? path : `${path}.ffprint`
+  writeFileSync(target, packProject(project, models))
+  addRecent([target])
+  return target
+}
+
 export async function saveProjectDialog(
   win: BrowserWindow | null,
   project: ProjectScene,

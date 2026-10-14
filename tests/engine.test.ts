@@ -86,6 +86,17 @@ describe('engine', () => {
     expect(g).toMatch(/^; fuzzy_skin = external$/m)
   })
 
+  it('applies the Creality V3 SE tuning baseline under user choices', async () => {
+    const s = { ...defaultPrintSettings(), overrides: { top_surface_pattern: 'concentric' } }
+    const scene: ScenePayload = { meshes: [{ id: 'c', name: 'cube', positions: cube(10) }], instances: [{ meshId: 'c', name: 'a', matrix: translate(100, 100) }] }
+    const r = await slice({ scene, settings: s, filamentId: 'pla', jobName: 'x' }, filament, machine)
+    const g = readFileSync(r.gcodePath, 'utf8')
+    expect(g).toMatch(/^; elefant_foot_compensation = 0.15$/m)
+    expect(g).toMatch(/^; enable_arc_fitting = 1$/m)
+    expect(g).toMatch(/^; initial_layer_line_width = 0.5$/m)
+    expect(g).toMatch(/^; top_surface_pattern = concentric$/m)
+  })
+
   it('reports an object off the bed as a readable error', async () => {
     const scene: ScenePayload = { meshes: [{ id: 'c', name: 'cube', positions: cube(20) }], instances: [{ meshId: 'c', name: 'a', matrix: translate(210, 100) }] }
     await expect(slice({ scene, settings: defaultPrintSettings(), filamentId: 'pla', jobName: 'x' }, filament, machine)).rejects.toThrow(/bed|object/i)

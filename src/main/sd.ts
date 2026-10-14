@@ -3,7 +3,7 @@
 // letters changes. macOS: /Volumes.
 
 import { execFile } from 'node:child_process'
-import { copyFileSync, existsSync, readdirSync, statSync } from 'node:fs'
+import { closeSync, copyFileSync, existsSync, fsyncSync, openSync, readdirSync, readSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
 import type { Drive } from '@shared/types'
@@ -26,28 +26,71 @@ function hasGcode(root: string): boolean {
   }
 }
 
+export interface DriveRow {
+  DeviceID: string
+  VolumeName: string | null
+  Size: number | null
+  FreeSpace: number | null
+  FileSystem: string | null
+  /** partitions on the physical disk (0 = unknown) */
+  Partitions?: number | null
+  Model?: string | null
+}
+
+const MB = 2 ** 20
+const GB = 2 ** 30
+/** Boot/helper partitions that USB installers (Rufus, Ventoy, Windows media) leave on sticks. */
+const HELPER_LABEL = /^(UEFI_NTFS|EFI|ESP|SYSTEM|BOOT|RECOVERY|VTOYEFI|WINPE)$/i
+
+/**
+ * The printer reads FAT32 cards (stock firmware: no exFAT, no NTFS). A volume is a likely printer card
+ * when it is FAT, big enough to be a real card (the 1 MB UEFI helper partition on a USB stick is not),
+ * not a boot helper, and either already holds G-code / carries the remembered label, or is the only
+ * partition on a disk of SD-card size. USB sticks prepared as installers have several partitions.
+ */
+export function classifyDrive(r: DriveRow, hint: string, hasGcodeFiles: boolean): boolean {
+  const size = r.Size ?? 0
+  const fat = /^FAT(32)?$/i.test(r.FileSystem ?? '')
+  const label = r.VolumeName ?? ''
+  if (!fat || size < 64 * MB || HELPER_LABEL.test(label)) return false
+  if ((!!hint && label === hint) || hasGcodeFiles) return true
+  const parts = r.Partitions ?? 0
+  return size <= 64 * GB && parts <= 1
+}
+
+/** Volumes worth showing: removable, with media, and not a tiny helper partition. */
+export function toDrives(rows: DriveRow[], hint: string, hasGcodeFiles: (root: string) => boolean): Drive[] {
+  return rows
+    .filter((r) => (r.Size ?? 0) >= 64 * MB) // empty readers report no size; helper partitions are tiny
+    .map((r) => {
+      const root = `${r.DeviceID}\\`
+      return {
+        root,
+        label: r.VolumeName ?? '',
+        sizeBytes: r.Size ?? 0,
+        freeBytes: r.FreeSpace ?? 0,
+        likelyPrinterCard: classifyDrive(r, hint, /^FAT/i.test(r.FileSystem ?? '') && hasGcodeFiles(root))
+      }
+    })
+    .sort((a, b) => Number(b.likelyPrinterCard) - Number(a.likelyPrinterCard) || a.root.localeCompare(b.root))
+}
+
+// One CIM round trip: each removable volume with its physical disk's partition count and model.
+const LIST_SCRIPT = [
+  "Get-CimInstance Win32_LogicalDisk -Filter 'DriveType=2' | ForEach-Object {",
+  '$p = Get-CimAssociatedInstance -InputObject $_ -ResultClassName Win32_DiskPartition -ErrorAction SilentlyContinue | Select-Object -First 1;',
+  '$d = if ($p) { Get-CimAssociatedInstance -InputObject $p -ResultClassName Win32_DiskDrive -ErrorAction SilentlyContinue | Select-Object -First 1 };',
+  '[pscustomobject]@{ DeviceID = $_.DeviceID; VolumeName = $_.VolumeName; Size = $_.Size; FreeSpace = $_.FreeSpace; FileSystem = $_.FileSystem;',
+  'Partitions = $(if ($d) { $d.Partitions } else { 0 }); Model = $(if ($d) { $d.Model } else { "" }) } } | ConvertTo-Json -Compress'
+].join(' ')
+
 export async function listDrives(): Promise<Drive[]> {
   if (process.platform === 'win32') {
-    const { stdout } = await ps(
-      "Get-CimInstance Win32_LogicalDisk -Filter 'DriveType=2' | Select-Object DeviceID,VolumeName,Size,FreeSpace,FileSystem | ConvertTo-Json -Compress"
-    )
+    const { stdout } = await ps(LIST_SCRIPT)
     const raw = stdout.trim()
     if (!raw) return []
-    const rows = ([] as { DeviceID: string; VolumeName: string | null; Size: number | null; FreeSpace: number | null; FileSystem: string | null }[]).concat(JSON.parse(raw))
-    return rows
-      .filter((r) => r.Size) // empty card readers report no size
-      .map((r) => {
-        const root = `${r.DeviceID}\\`
-        const fat = /^FAT/i.test(r.FileSystem ?? '')
-        const label = r.VolumeName ?? ''
-        return {
-          root,
-          label,
-          sizeBytes: r.Size ?? 0,
-          freeBytes: r.FreeSpace ?? 0,
-          likelyPrinterCard: fat && ((!!hint && label === hint) || hasGcode(root) || (r.Size ?? 0) <= 64 * 2 ** 30)
-        }
-      })
+    const rows = ([] as DriveRow[]).concat(JSON.parse(raw))
+    return toDrives(rows, hint, hasGcode)
   }
   if (process.platform === 'darwin') {
     const vols = readdirSync('/Volumes').filter((v) => v !== 'Macintosh HD')
@@ -59,23 +102,60 @@ export async function listDrives(): Promise<Drive[]> {
   return []
 }
 
-/** Copies the G-code to the card root under a clean, unused name and checks the size landed. */
+/**
+ * Copies the G-code to the card root under a clean, unused name, flushes it to the card (so pulling
+ * the card after "Saved" is safe even without Eject) and checks the copy matches: same size and same
+ * bytes at the start and end.
+ */
 export function saveToDrive(gcodePath: string, driveRoot: string, fileName: string): string {
   if (!existsSync(driveRoot)) throw new Error('The SD card is no longer connected.')
   const name = dedupeName(safeFileName(fileName), (n) => existsSync(join(driveRoot, n)))
   const target = join(driveRoot, name)
-  copyFileSync(gcodePath, target)
   const want = statSync(gcodePath).size
+  try {
+    copyFileSync(gcodePath, target)
+    const fd = openSync(target, 'r+')
+    try {
+      fsyncSync(fd)
+    } finally {
+      closeSync(fd)
+    }
+  } catch (e) {
+    const code = (e as NodeJS.ErrnoException).code
+    if (code === 'ENOSPC') throw new Error('The SD card is full. Delete old files from it and try again.')
+    if (code === 'EROFS' || code === 'EPERM' || code === 'EACCES') throw new Error('The SD card is write-protected. Check the lock switch on the card or adapter.')
+    throw new Error(`Could not write to the SD card: ${(e as Error).message}`)
+  }
   const got = statSync(target).size
   if (want !== got) throw new Error(`The copy on the card is incomplete (${got} of ${want} bytes). Try again or use another card.`)
+  if (!sameEnds(gcodePath, target, want)) throw new Error('The copy on the card does not match the sliced file. Try again or use another card.')
   return target
+}
+
+function sameEnds(a: string, b: string, size: number): boolean {
+  const n = Math.min(size, 64 * 1024)
+  const read = (path: string, pos: number): Buffer => {
+    const fd = openSync(path, 'r')
+    try {
+      const buf = Buffer.alloc(n)
+      readSync(fd, buf, 0, n, pos)
+      return buf
+    } finally {
+      closeSync(fd)
+    }
+  }
+  return read(a, 0).equals(read(b, 0)) && read(a, size - n).equals(read(b, size - n))
 }
 
 export async function ejectDrive(driveRoot: string): Promise<{ ok: boolean; message?: string }> {
   if (process.platform === 'win32') {
     const letter = driveRoot.replace(/\\$/, '')
     try {
-      await ps(`(New-Object -ComObject Shell.Application).Namespace(17).ParseName('${letter}').InvokeVerb('Eject')`)
+      if (!/^[A-Z]:$/i.test(letter)) return { ok: false, message: 'That is not a drive letter.' }
+      if (!existsSync(driveRoot)) return { ok: true }
+      await ps(
+        `$i = (New-Object -ComObject Shell.Application).Namespace(17).ParseName('${letter}'); if (-not $i) { throw 'Drive not found' }; $i.InvokeVerb('Eject')`
+      )
     } catch (e) {
       return { ok: false, message: (e as Error).message }
     }
