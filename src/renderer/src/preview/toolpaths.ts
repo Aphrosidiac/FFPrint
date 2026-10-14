@@ -21,7 +21,8 @@ import {
   ShaderMaterial,
   SRGBColorSpace,
   Vector3,
-  WebGLRenderer
+  WebGLRenderer,
+  MOUSE
 } from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { MACHINE } from '@shared/machine'
@@ -159,6 +160,8 @@ export class PreviewScene {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement)
     this.controls.screenSpacePanning = true
     this.controls.zoomToCursor = true
+    // Same mouse as Prepare: right/left-drag spin, middle-drag (or Shift+drag) pans.
+    this.controls.mouseButtons = { LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.PAN, RIGHT: MOUSE.ROTATE }
     this.controls.addEventListener('change', () => this.requestRender())
 
     // Same lights as the Prepare workspace (the bed model uses a lit material).

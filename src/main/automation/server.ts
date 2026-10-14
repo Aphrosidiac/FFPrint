@@ -50,6 +50,14 @@ async function runMain(name: string, args: Record<string, unknown>, win: Browser
       const img = await win.webContents.capturePage()
       return [{ type: 'image', data: img.toPNG().toString('base64'), mimeType: 'image/png' }]
     }
+    case 'ui_eval': {
+      // Run from main: the page's CSP forbids eval/new Function inside the renderer.
+      if (!win || win.isDestroyed()) throw new Error('The FF Print window is not open.')
+      const code = String(args.code ?? '')
+      const result = await win.webContents.executeJavaScript(`(async () => { const ff = window.__ff; ${code}
+ })().then((v) => JSON.parse(JSON.stringify(v ?? null)))`, true)
+      return text(result)
+    }
     case 'list_recent':
       return text(getPrefs().recent)
     case 'get_machine':

@@ -23,7 +23,8 @@ import {
   SRGBColorSpace,
   Vector2,
   Vector3,
-  WebGLRenderer
+  WebGLRenderer,
+  MOUSE
 } from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js'
@@ -170,7 +171,9 @@ export class Workspace3D {
     this.orbit.zoomToCursor = true
     this.orbit.minDistance = 8
     this.orbit.maxDistance = 3000
-    this.orbit.mouseButtons = { LEFT: 0, MIDDLE: 2, RIGHT: 2 } // rotate, pan, pan
+    // Right-drag spins the view around the plate (Fakhrul's choice), as does left-drag on empty space;
+    // middle-drag pans. OrbitControls turns a rotate drag into a pan while Shift/Ctrl is held.
+    this.orbit.mouseButtons = { LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.PAN, RIGHT: MOUSE.ROTATE }
     this.orbit.addEventListener('change', () => this.requestRender())
 
     this.scene.add(this.proxy)

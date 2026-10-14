@@ -24,17 +24,28 @@ await shot('empty')
 await page.keyboard.press('Escape')
 assert.equal(await page.locator('.ctx').count(), 0, 'Esc closes the menu')
 
-// 2. right-drag pans and opens no menu
-const cam = () => page.evaluate(() => window.__ffPrepare.camera().target.map((v) => Math.round(v)))
-const t0 = await cam()
-await page.mouse.move(px, py)
-await page.mouse.down({ button: 'right' })
-await page.mouse.move(px + 150, py + 40, { steps: 10 })
-await page.mouse.up({ button: 'right' })
-await page.waitForTimeout(150)
-assert.notDeepEqual(await cam(), t0, 'right-drag pans')
+// 2. right-drag spins the view around the plate (target fixed), Shift+right-drag pans; no menu after a drag
+const cam = () => page.evaluate(() => window.__ffPrepare.camera())
+const drag = async (shift) => {
+  if (shift) await page.keyboard.down('Shift')
+  await page.mouse.move(px, py)
+  await page.mouse.down({ button: 'right' })
+  await page.mouse.move(px + 150, py + 40, { steps: 10 })
+  await page.mouse.up({ button: 'right' })
+  if (shift) await page.keyboard.up('Shift')
+  await page.waitForTimeout(150)
+}
+const same = (a, b) => a.every((v, i) => Math.abs(v - b[i]) < 0.5)
+let c0 = await cam()
+await drag(false)
+let c1 = await cam()
+assert.ok(same(c0.target, c1.target) && !same(c0.position, c1.position), 'right-drag orbits around a fixed target')
 assert.equal(await page.locator('.ctx').count(), 0, 'no menu after a drag')
-console.log('- right-drag pans, no menu')
+c0 = c1
+await drag(true)
+c1 = await cam()
+assert.ok(!same(c0.target, c1.target), 'Shift+right-drag pans')
+console.log('- right-drag spins, Shift+right-drag pans, no menu after drags')
 
 // 3. with an object: plate menu has Arrange/Select all enabled; object menu on the object
 await page.evaluate((p) => window.__ff.openPaths([p]), resolve('tests/fixtures/cube20.stl'))

@@ -58,10 +58,6 @@ const handlers: Record<string, Handler> = {
     if (mode) app.mode = mode
     return { page: app.page, mode: app.mode }
   },
-  ui_eval: async ({ code }) => {
-    const fn = new Function('ff', `return (async () => { ${code} })()`)
-    return plain(await fn({ app, scene, meshes, actions: handlers, objects: V, settings: S, output: O, preview: P }))
-  },
 
   // ---- files
   open_models: async ({ paths }) => {
