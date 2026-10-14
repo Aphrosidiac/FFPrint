@@ -155,7 +155,7 @@ export function addObject(meshId: string, name: string, at?: { x: number; y: num
 export function removeObjects(ids: string[]): void {
   scene.objects = scene.objects.filter((o) => !ids.includes(o.id))
   scene.selection = scene.selection.filter((id) => !ids.includes(id))
-  for (const [id] of meshes) if (!scene.objects.some((o) => o.meshId === id)) meshes.delete(id)
+  // Meshes stay loaded so Undo can bring the object back; stores/undo.ts drops unreferenced ones.
   touch()
 }
 

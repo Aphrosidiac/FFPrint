@@ -1,9 +1,10 @@
 <script setup lang="ts">
 // Title-bar row (draggable). Windows draws its caption buttons over the right edge (titleBarOverlay).
 import { computed, ref } from 'vue'
-import { FolderOpen, Save, Clock, Settings2, Layers, Box, ChevronDown, FileClock } from 'lucide-vue-next'
+import { FolderOpen, Save, Clock, Settings2, Layers, Box, ChevronDown, FileClock, Undo2, Redo2 } from 'lucide-vue-next'
 import { app, openDialog, openPaths, saveProject } from '@/stores/app'
 import { hasObjects } from '@/stores/scene'
+import { canRedo, canUndo, redo, undo } from '@/stores/undo'
 import { api, platform } from '@/lib/api'
 import Segmented from '@/ui/Segmented.vue'
 
@@ -53,6 +54,9 @@ function go(page: typeof app.page): void {
         </div>
       </div>
       <button type="button" class="tb" title="Save project" :disabled="!hasObjects" @click="saveProject"><Save /><span>Save project</span></button>
+      <span class="sep" />
+      <button type="button" class="tb icon" title="Undo (Ctrl+Z)" aria-label="Undo" :disabled="!canUndo || app.page !== 'workspace'" @click="undo"><Undo2 /></button>
+      <button type="button" class="tb icon" title="Redo (Ctrl+Y)" aria-label="Redo" :disabled="!canRedo || app.page !== 'workspace'" @click="redo"><Redo2 /></button>
     </div>
 
     <div class="centre">
@@ -173,6 +177,12 @@ function go(page: typeof app.page): void {
 }
 .recent {
   position: relative;
+}
+.sep {
+  width: 1px;
+  height: 16px;
+  margin: 0 4px;
+  background: var(--border);
 }
 .menu {
   position: absolute;

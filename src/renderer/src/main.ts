@@ -8,6 +8,7 @@ import * as settingsActions from './stores/settingsActions'
 import * as outputActions from './stores/outputActions'
 import * as previewActions from './preview/actions'
 import * as viewportActions from './viewport/actions'
+import * as undoActions from './stores/undo'
 import './styles/tokens.css'
 import './styles/base.css'
 
@@ -23,6 +24,7 @@ import './styles/base.css'
   output: outputActions,
   preview: previewActions,
   objects: viewportActions,
+  undo: undoActions,
   debug: { parseModel, addMesh, addObject, worldBox },
   setTheme: (t: 'light' | 'dark' | 'system') => {
     if (app.prefs) app.prefs.theme = t

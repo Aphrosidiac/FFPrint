@@ -8,6 +8,7 @@ import { api, errorText, onEvent } from '@/lib/api'
 import { arrange } from '@/lib/arrange'
 import { designerIntent } from '@/lib/designer'
 import { parseFile, parseModel } from '@/lib/loaders'
+import { initUndo, resetUndo } from './undo'
 import { addMesh, addObject, clearScene, dropToBed, fromMatrix, issues, scene, select, toProject, toScenePayload, type SceneObject } from './scene'
 
 export type Mode = 'prepare' | 'preview'
@@ -73,6 +74,7 @@ export async function init(): Promise<void> {
   if (last) app.settings = { ...defaultPrintSettings(), ...last }
   app.filamentId = filaments.some((f) => f.id === prefs.lastFilamentId) ? prefs.lastFilamentId : filaments[0]?.id ?? ''
   app.ready = true
+  initUndo()
   refreshDrives()
 
   onEvent('drives-changed', () => refreshDrives())
@@ -186,6 +188,7 @@ async function loadProject(load: () => Promise<{ project: import('@shared/types'
   app.slice = { status: 'idle', result: null, error: '' }
   app.mode = 'prepare'
   app.page = 'workspace'
+  resetUndo()
 }
 
 export async function reprint(historyId: string): Promise<void> {

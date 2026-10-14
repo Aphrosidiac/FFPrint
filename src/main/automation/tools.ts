@@ -47,6 +47,8 @@ export const TOOLS: ToolSpec[] = [
   { name: 'centre_object', title: 'Centre on bed', where: 'renderer', description: 'Move the object to the middle of the bed.', shape: { id } },
   { name: 'duplicate_objects', title: 'Duplicate', where: 'renderer', description: 'Duplicate objects `count` times and arrange.', shape: { ids, count: z.number().int().min(1).max(50).optional() } },
   { name: 'remove_objects', title: 'Remove objects', where: 'renderer', description: 'Delete objects from the bed.', shape: { ids } },
+  { name: 'undo', title: 'Undo', where: 'renderer', description: 'Undo the last change to the bed (add, delete, move, rotate, scale, rename, hide).', shape: {} },
+  { name: 'redo', title: 'Redo', where: 'renderer', description: 'Redo the last undone change.', shape: {} },
   { name: 'clear_bed', title: 'Clear bed', where: 'renderer', description: 'Remove every object.', shape: {} },
   { name: 'rename_object', title: 'Rename object', where: 'renderer', description: 'Rename an object (also used for the G-code file name).', shape: { id, name: z.string().min(1) } },
   { name: 'set_object_visible', title: 'Show/hide object', where: 'renderer', description: 'Hidden objects stay on the bed but are not printed.', shape: { id, visible: z.boolean() } },

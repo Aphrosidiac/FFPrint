@@ -11,6 +11,7 @@ import * as P from '@/preview/actions'
 import * as O from '@/stores/outputActions'
 import * as S from '@/stores/settingsActions'
 import * as V from '@/viewport/actions'
+import * as U from '@/stores/undo'
 import { app, cancelSlice, currentFilament, openPaths, recordJob, reprint, runSlice } from '@/stores/app'
 import { clearScene, meshes, scene, toProject, type SceneObject } from '@/stores/scene'
 
@@ -121,6 +122,8 @@ const handlers: Record<string, Handler> = {
     V.deleteObjects(ids)
     return { remaining: scene.objects.length }
   },
+  undo: () => ({ undone: U.undo(), ...U.undoInfo(), objects: V.listObjects() }),
+  redo: () => ({ redone: U.redo(), ...U.undoInfo(), objects: V.listObjects() }),
   clear_bed: () => {
     clearScene()
     return { remaining: 0 }

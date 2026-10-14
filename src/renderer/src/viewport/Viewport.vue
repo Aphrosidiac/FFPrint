@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { redo, undo } from '@/stores/undo'
 // Prepare mode's 3D workspace: the bed, the parts, camera views, tools, keyboard and context menu.
 import { onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import { ArrowDownToLine, Copy, FolderOpen, Move, Rotate3d, Scale3d, Scan, Trash2, Crosshair, ArrowDownFromLine } from 'lucide-vue-next'
@@ -108,6 +109,12 @@ function onKey(e: KeyboardEvent): void {
     return
   }
   if (ctrl && !e.altKey) {
+    if (k === 'z' || k === 'y') {
+      e.preventDefault()
+      if (k === 'y' || e.shiftKey) redo()
+      else undo()
+      return
+    }
     if (k === 'd') {
       e.preventDefault()
       duplicateObjects([...scene.selection])

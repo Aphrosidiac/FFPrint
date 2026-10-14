@@ -5,6 +5,7 @@ import type { Events, EventName } from '@shared/contract'
 import { initAutomationBridge } from './automation/bridge'
 import { startAutomation } from './automation/server'
 import { initEngineDir } from './engine/paths'
+import { warmEngine } from './engine/slice'
 import { createApi, setupIpc } from './ipc'
 import { getPrefs } from './library'
 import { watchDrives } from './sd'
@@ -86,6 +87,7 @@ if (!app.requestSingleInstanceLock()) {
     createWindow()
     watchDrives(() => send('drives-changed', null))
     startAutomation(() => win)
+    setTimeout(warmEngine, 1500)
     app.on('activate', () => {
       if (!BrowserWindow.getAllWindows().length) createWindow()
     })
