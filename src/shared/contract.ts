@@ -84,6 +84,8 @@ export interface Events {
   'open-files': string[]
   /** Removable drives changed (card inserted/removed) */
   'drives-changed': null
+  /** Live slicing progress, 0..100, with the engine's current stage */
+  'slice-progress': { percent: number; stage: string }
 }
 
 export type EventName = keyof Events

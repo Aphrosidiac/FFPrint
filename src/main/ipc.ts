@@ -34,7 +34,7 @@ export function createApi(win: () => BrowserWindow | null): Api {
 
     slice: async (req) => {
       const filament = lib.getFilaments().find((f) => f.id === req.filamentId) ?? lib.getFilaments()[0]
-      return slice(req, filament, lib.getMachine(), lib.getPrefs().fileNamePattern)
+      return slice(req, filament, lib.getMachine(), lib.getPrefs().fileNamePattern, (p) => win()?.webContents.send('ffprint:event', 'slice-progress', p))
     },
     cancelSlice: async () => cancelSlice(),
     readGcode: async (path) => readFileSync(path, 'utf8'),

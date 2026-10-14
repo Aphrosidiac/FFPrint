@@ -17,6 +17,16 @@ const canSlice = computed(() => !reason.value && status.value !== 'slicing')
 
 // Elapsed seconds while slicing.
 const elapsed = ref(0)
+// The engine reports stages, not progress inside a stage (supports can sit at one value for 10 s).
+// The bar eases forward within the current stage but never past the start of the next real stage,
+// so it never claims more than the engine has done.
+const STAGE_STARTS = [1, 5, 15, 25, 35, 50, 60, 70, 75, 80, 99, 100]
+const shown = ref(0)
+function tickShown(): void {
+  const real = app.sliceProgress.percent
+  const cap = (STAGE_STARTS.find((b) => b > real) ?? 100) - 1
+  shown.value = Math.max(real, Math.min(cap, shown.value + (cap - shown.value) * 0.03))
+}
 let started = 0
 let timer: ReturnType<typeof setInterval> | undefined
 watch(
@@ -26,7 +36,11 @@ watch(
     if (s === 'slicing') {
       started = Date.now()
       elapsed.value = 0
-      timer = setInterval(() => (elapsed.value = Math.floor((Date.now() - started) / 1000)), 250)
+      shown.value = 0
+      timer = setInterval(() => {
+        elapsed.value = Math.floor((Date.now() - started) / 1000)
+        tickShown()
+      }, 100)
     }
   },
   { immediate: true }
@@ -41,10 +55,13 @@ onBeforeUnmount(() => clearInterval(timer))
     <!-- Slicing -->
     <div v-if="status === 'slicing'" class="progress">
       <div class="progress-head">
-        <span class="title">Slicing</span>
+        <span class="title">Slicing <span class="pct num">{{ Math.floor(shown) }}%</span></span>
         <span class="muted num">{{ elapsed }} s</span>
       </div>
-      <div class="bar" role="progressbar" aria-label="Slicing"><div class="bar-run" /></div>
+      <div class="bar" role="progressbar" aria-label="Slicing" :aria-valuenow="Math.floor(shown)" aria-valuemin="0" aria-valuemax="100">
+        <div class="bar-fill" :style="{ width: `${Math.max(2, shown)}%` }" />
+      </div>
+      <div class="stage">{{ app.sliceProgress.stage || 'Starting' }}</div>
       <Button block @click="cancelSlice">Cancel</Button>
     </div>
 
@@ -113,6 +130,28 @@ onBeforeUnmount(() => clearInterval(timer))
   border-radius: 2px;
   background: var(--surface-3);
   overflow: hidden;
+}
+.bar-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 2px;
+  background: var(--accent);
+  transition: width 200ms var(--ease);
+}
+.pct {
+  margin-left: 6px;
+  font-weight: 500;
+  color: var(--text-2);
+}
+.stage {
+  margin-top: -2px;
+  font-size: var(--fs-12);
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .bar-run {
   position: absolute;

@@ -35,6 +35,7 @@ export const app = reactive({
   settings: defaultPrintSettings() as PrintSettings,
   filamentId: '',
   slice: { status: 'idle' as SliceStatus, result: null as SliceResult | null, error: '' },
+  sliceProgress: { percent: 0, stage: '' },
   drives: [] as Drive[],
   engine: { ok: true, error: '' },
   toasts: [] as Toast[],
@@ -79,6 +80,9 @@ export async function init(): Promise<void> {
   refreshDrives()
 
   onEvent('drives-changed', () => refreshDrives())
+  onEvent('slice-progress', (p) => {
+    if (app.slice.status === 'slicing') app.sliceProgress = p
+  })
   onEvent('open-files', (paths) => openPaths(paths))
 
   let saveTimer: ReturnType<typeof setTimeout> | undefined
@@ -254,6 +258,7 @@ export async function runSlice(): Promise<void> {
     app.slice = { status: 'error', result: app.slice.result, error: problems.join(' · ') }
     return
   }
+  app.sliceProgress = { percent: 0, stage: 'Starting' }
   app.slice.status = 'slicing'
   app.slice.error = ''
   try {
