@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { redo, undo } from '@/stores/undo'
+import { canRedo, canUndo, redo, undo } from '@/stores/undo'
 // Prepare mode's 3D workspace: the bed, the parts, camera views, tools, keyboard and context menu.
 import { onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
-import { ArrowDownToLine, Copy, Move, Rotate3d, Scale3d, Scan, Trash2, Crosshair, ArrowDownFromLine } from 'lucide-vue-next'
-import { app } from '@/stores/app'
+import { ArrowDownToLine, BoxSelect, Copy, FolderOpen, LayoutGrid, Move, Redo2, Rotate3d, Scale3d, Scan, Trash2, Crosshair, ArrowDownFromLine, Undo2 } from 'lucide-vue-next'
+import { app, openDialog } from '@/stores/app'
 import { hasObjects, meshes, scene, selected } from '@/stores/scene'
 import IconButton from '@/ui/IconButton.vue'
 import ViewIcon from './ViewIcon.vue'
@@ -146,11 +146,12 @@ function menuStyle(r: ContextMenuRequest): Record<string, string> {
   const w = host.value?.clientWidth ?? 0
   const h = host.value?.clientHeight ?? 0
   const x = Math.min(r.x, w - 208)
-  const y = Math.min(r.y, h - 196)
+  const y = Math.min(r.y, h - (r.id === null ? 300 : 196))
   return { left: `${Math.max(8, x)}px`, top: `${Math.max(8, y)}px` }
 }
 
 const selIds = (): string[] => [...scene.selection]
+const deleteAll = (): void => deleteObjects(scene.objects.map((o) => o.id))
 
 function run(action: () => void): void {
   menu.value = null
@@ -193,7 +194,19 @@ function run(action: () => void): void {
       <span class="key">Esc</span>
     </div>
 
-    <div v-if="menu" class="ctx" role="menu" :style="menuStyle(menu)" @contextmenu.prevent>
+    <div v-if="menu && menu.id === null" class="ctx" role="menu" :style="menuStyle(menu)" @contextmenu.prevent>
+      <button type="button" role="menuitem" @click="run(openDialog)"><FolderOpen /><span>Add models…</span><kbd>Ctrl+O</kbd></button>
+      <div class="ctx-sep" />
+      <button type="button" role="menuitem" :disabled="!hasObjects" @click="run(() => arrangeAll())"><LayoutGrid /><span>Arrange all</span><kbd>A</kbd></button>
+      <button type="button" role="menuitem" :disabled="!hasObjects" @click="run(selectAll)"><BoxSelect /><span>Select all</span><kbd>Ctrl+A</kbd></button>
+      <button type="button" role="menuitem" @click="run(fit)"><Scan /><span>Fit view</span><kbd>F</kbd></button>
+      <div class="ctx-sep" />
+      <button type="button" role="menuitem" :disabled="!canUndo" @click="run(undo)"><Undo2 /><span>Undo</span><kbd>Ctrl+Z</kbd></button>
+      <button type="button" role="menuitem" :disabled="!canRedo" @click="run(redo)"><Redo2 /><span>Redo</span><kbd>Ctrl+Y</kbd></button>
+      <div class="ctx-sep" />
+      <button type="button" role="menuitem" class="danger" :disabled="!hasObjects" @click="run(deleteAll)"><Trash2 /><span>Delete all</span></button>
+    </div>
+    <div v-else-if="menu" class="ctx" role="menu" :style="menuStyle(menu)" @contextmenu.prevent>
       <button type="button" role="menuitem" @click="run(() => duplicateObjects(selIds()))"><Copy /><span>Duplicate</span><kbd>Ctrl+D</kbd></button>
       <button type="button" role="menuitem" @click="run(() => setLayFlatMode(true))"><ArrowDownToLine /><span>Lay on face</span><kbd>L</kbd></button>
       <button type="button" role="menuitem" @click="run(() => dropToBed(selIds()))"><ArrowDownFromLine /><span>Drop to bed</span></button>
@@ -307,8 +320,16 @@ kbd {
   text-align: left;
   cursor: pointer;
 }
-.ctx button:hover {
+.ctx button:hover:not(:disabled) {
   background: var(--surface-3);
+}
+.ctx button:disabled {
+  color: var(--text-3);
+  cursor: default;
+  opacity: 0.6;
+}
+.ctx button:disabled svg {
+  color: var(--text-3);
 }
 .ctx button span {
   flex: 1;

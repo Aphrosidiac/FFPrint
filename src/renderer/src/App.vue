@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { app, init, openPaths } from '@/stores/app'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { app, init, openDialog, openPaths, saveProject } from '@/stores/app'
 import { pathForFile } from '@/lib/api'
 import { initTheme } from '@/lib/theme'
 import TopBar from '@/panels/TopBar.vue'
@@ -17,10 +17,25 @@ import Toasts from '@/ui/Toasts.vue'
 const dragging = ref(false)
 let dragDepth = 0
 
+function onKey(e: KeyboardEvent): void {
+  if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey || document.querySelector('dialog[open]')) return
+  const k = e.key.toLowerCase()
+  if (k === 'o') {
+    e.preventDefault()
+    app.page = 'workspace'
+    openDialog()
+  } else if (k === 's' && app.page === 'workspace') {
+    e.preventDefault()
+    saveProject()
+  }
+}
+
 onMounted(async () => {
   await init()
   initTheme()
+  window.addEventListener('keydown', onKey)
 })
+onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 
 function hasFiles(e: DragEvent): boolean {
   return !!e.dataTransfer && [...e.dataTransfer.types].includes('Files')

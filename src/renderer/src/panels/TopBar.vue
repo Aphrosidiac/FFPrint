@@ -53,7 +53,7 @@ function go(page: typeof app.page): void {
           <div v-if="!recent.length" class="menu-empty">Nothing opened yet</div>
         </div>
       </div>
-      <button type="button" class="tb" title="Save project" :disabled="!hasObjects" @click="saveProject"><Save /><span>Save project</span></button>
+      <button type="button" class="tb" title="Save project (Ctrl+S)" :disabled="!hasObjects" @click="saveProject"><Save /><span>Save project</span></button>
       <span class="sep" />
       <button type="button" class="tb icon" title="Undo (Ctrl+Z)" aria-label="Undo" :disabled="!canUndo || app.page !== 'workspace'" @click="undo"><Undo2 /></button>
       <button type="button" class="tb icon" title="Redo (Ctrl+Y)" aria-label="Redo" :disabled="!canRedo || app.page !== 'workspace'" @click="redo"><Redo2 /></button>

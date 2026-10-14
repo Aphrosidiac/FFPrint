@@ -91,7 +91,8 @@ interface GizmoStart {
 export interface ContextMenuRequest {
   x: number
   y: number
-  id: string
+  /** object under the cursor, or null for the plate / empty space */
+  id: string | null
 }
 
 export class Workspace3D {
@@ -633,9 +634,12 @@ export class Workspace3D {
     e.preventDefault()
     if (Math.hypot(e.clientX - this.down.x, e.clientY - this.down.y) > CLICK_SLOP) return
     const hit = this.pick(e)
-    if (!hit) return
-    if (!store.selection.includes(hit.object.id)) select([hit.object.id])
     const r = this.container.getBoundingClientRect()
+    if (!hit) {
+      this.onContextMenu({ x: e.clientX - r.left, y: e.clientY - r.top, id: null })
+      return
+    }
+    if (!store.selection.includes(hit.object.id)) select([hit.object.id])
     this.onContextMenu({ x: e.clientX - r.left, y: e.clientY - r.top, id: hit.object.id })
   }
 
