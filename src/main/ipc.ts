@@ -10,6 +10,7 @@ import * as files from './files'
 import * as history from './history'
 import * as lib from './library'
 import * as past from './pastModels'
+import { takePendingOpens } from './openQueue'
 import * as sd from './sd'
 import { automationStatus } from './automation/server'
 
@@ -26,6 +27,7 @@ export function createApi(win: () => BrowserWindow | null): Api {
     saveProjectDialog: (project, models, name) => files.saveProjectDialog(win(), project, models, name),
     openProject: async (path) => files.openProject(path),
     recentFiles: async () => lib.getPrefs().recent,
+    takeLaunchFiles: async () => takePendingOpens(),
     listPastModels: async () => past.listPastModels(),
     hidePastModel: async (m) => past.hidePastModel(m),
     saveModelThumbnail: async (path, dataUrl) => past.saveModelThumbnail(path, dataUrl),

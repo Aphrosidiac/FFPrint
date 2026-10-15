@@ -24,6 +24,8 @@ export interface Api {
   saveProjectDialog(project: ProjectScene, models: { file: string; bytes: Uint8Array }[], suggestedName: string): Promise<string | null>
   openProject(path: string): Promise<{ project: ProjectScene; models: { file: string; bytes: Uint8Array }[] }>
   recentFiles(): Promise<string[]>
+  /** Files passed at launch (or sent before the window listened); the renderer calls this once its listener is up. */
+  takeLaunchFiles(): Promise<string[]>
   /** Past models for the empty bed: FF Print recents, printed jobs, Creality Print projects. */
   listPastModels(): Promise<PastModel[]>
   hidePastModel(m: Pick<PastModel, 'kind' | 'path' | 'historyId'>): Promise<void>

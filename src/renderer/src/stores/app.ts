@@ -84,6 +84,10 @@ export async function init(): Promise<void> {
     if (app.slice.status === 'slicing') app.sliceProgress = p
   })
   onEvent('open-files', (paths) => openPaths(paths))
+  // Launch files wait in main until this listener exists, so a slow start can't drop them.
+  api.takeLaunchFiles().then((paths) => {
+    if (paths.length) openPaths(paths)
+  })
 
   let saveTimer: ReturnType<typeof setTimeout> | undefined
   watch(

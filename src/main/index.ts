@@ -8,6 +8,7 @@ import { initEngineDir } from './engine/paths'
 import { warmEngine } from './engine/slice'
 import { createApi, setupIpc } from './ipc'
 import { getPrefs } from './library'
+import { queueOpen, stopListening } from './openQueue'
 import { watchDrives } from './sd'
 import { initStore } from './store'
 
@@ -17,7 +18,6 @@ else if (!app.isPackaged) app.setPath('userData', join(app.getPath('appData'), '
 app.setAppUserModelId('studio.ffdev.ffprint')
 
 let win: BrowserWindow | null = null
-let pendingFiles: string[] = []
 
 const modelArgs = (argv: string[]): string[] => argv.slice(1).filter((a) => /\.(stl|obj|3mf|ffprint)$/i.test(a) && existsSync(a))
 
@@ -48,23 +48,21 @@ function createWindow(): void {
     shell.openExternal(url)
     return { action: 'deny' }
   })
-  win.webContents.on('did-finish-load', () => {
-    if (pendingFiles.length) {
-      send('open-files', pendingFiles)
-      pendingFiles = []
-    }
-  })
+  // Files wait in openQueue until the renderer has its listener up (it calls takeLaunchFiles).
+  win.webContents.on('did-start-loading', stopListening)
   if (!app.isPackaged && process.env.ELECTRON_RENDERER_URL) win.loadURL(process.env.ELECTRON_RENDERER_URL)
   else win.loadFile(join(__dirname, '../renderer/index.html'))
-  win.on('closed', () => (win = null))
+  win.on('closed', () => {
+    win = null
+    stopListening()
+  })
 }
 
 if (!app.requestSingleInstanceLock()) {
   app.quit()
 } else {
   app.on('second-instance', (_e, argv) => {
-    const files = modelArgs(argv)
-    if (files.length) send('open-files', files)
+    queueOpen(modelArgs(argv), (files) => send('open-files', files))
     if (win) {
       if (win.isMinimized()) win.restore()
       win.focus()
@@ -72,8 +70,7 @@ if (!app.requestSingleInstanceLock()) {
   })
   app.on('open-file', (e, file) => {
     e.preventDefault()
-    if (win) send('open-files', [file])
-    else pendingFiles.push(file)
+    queueOpen([file], (files) => send('open-files', files))
   })
 
   app.whenReady().then(() => {
@@ -83,7 +80,7 @@ if (!app.requestSingleInstanceLock()) {
     nativeTheme.themeSource = getPrefs().theme
     setupIpc(createApi(() => win))
     initAutomationBridge()
-    pendingFiles.push(...modelArgs(process.argv))
+    queueOpen(modelArgs(process.argv), (files) => send('open-files', files))
     createWindow()
     watchDrives(() => send('drives-changed', null))
     startAutomation(() => win)
