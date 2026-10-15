@@ -13,6 +13,8 @@ import FilamentsPage from '@/pages/FilamentsPage.vue'
 import MachinePage from '@/pages/MachinePage.vue'
 import HistoryPage from '@/pages/HistoryPage.vue'
 import Toasts from '@/ui/Toasts.vue'
+import { setPlateVisible } from '@/viewport/actions'
+import { ws } from '@/viewport/workspace'
 
 const dragging = ref(false)
 let dragDepth = 0
@@ -23,6 +25,15 @@ function onKey(e: KeyboardEvent): void {
     const t = e.target as HTMLElement | null
     if (!t?.closest('input, textarea, select')) {
       app.page = 'workspace'
+      return
+    }
+  }
+  // P shows/hides the build plate in Prepare and Preview.
+  if (e.key.toLowerCase() === 'p' && !e.ctrlKey && !e.metaKey && !e.altKey && app.page === 'workspace' && !document.querySelector('dialog[open]')) {
+    const t = e.target as HTMLElement | null
+    if (!t?.closest('input, textarea, select, [contenteditable]')) {
+      e.preventDefault()
+      setPlateVisible(!ws.plate)
       return
     }
   }

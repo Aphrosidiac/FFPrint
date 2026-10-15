@@ -280,6 +280,11 @@ export class Workspace3D {
     this.requestRender()
   }
 
+  setPlateVisible(on: boolean): void {
+    this.bed.setPlateVisible(on)
+    this.requestRender()
+  }
+
   private applyColors(): void {
     const c = (this.colors = readColors())
     this.renderer.setClearColor(c.background, 1)

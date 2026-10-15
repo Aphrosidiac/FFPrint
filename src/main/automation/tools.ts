@@ -56,6 +56,7 @@ export const TOOLS: ToolSpec[] = [
   { name: 'set_object_visible', title: 'Show/hide object', where: 'renderer', description: 'Hidden objects stay on the bed but are not printed.', shape: { id, visible: z.boolean() } },
   { name: 'arrange_all', title: 'Arrange', where: 'renderer', description: 'Pack all objects on the bed. Returns whether everything fits.', shape: {} },
   { name: 'set_camera_view', title: 'Camera view', where: 'renderer', description: 'Point the 3D camera (prepare or preview mode).', shape: { view: z.enum(['iso', 'top', 'front', 'left', 'right', 'fit', 'fit-selection']) } },
+  { name: 'set_plate_visible', title: 'Show / hide plate', where: 'renderer', description: 'Show or hide the build plate (sheet, markings, grid) in prepare and preview, to see a part from below. The printable-area outline stays.', shape: { visible: z.boolean() } },
 
   // ---- settings
   { name: 'list_settings', title: 'List settings', where: 'renderer', readOnly: true, description: 'Every setting with current value, default, unit, range and a plain-language explanation; plus the main-panel choices (quality, strength, supports, adhesion).', shape: {} },

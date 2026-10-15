@@ -43,6 +43,8 @@ try {
   assert.ok(Math.abs(sc.size.z - 30) < 0.05)
   await call(client, 'duplicate_objects', { ids: [id], count: 2 })
   const objs = await call(client, 'list_objects')
+  assert.deepEqual(await call(client, 'set_plate_visible', { visible: false }), { plate: false })
+  assert.deepEqual(await call(client, 'set_plate_visible', { visible: true }), { plate: true })
   assert.equal(objs.length, 3)
   await call(client, 'set_print_settings', { quality: 'draft', strength: 'strong', supports: 'off', adhesion: 'brim' })
   await call(client, 'set_setting', { key: 'outer_wall_speed', value: 40 })

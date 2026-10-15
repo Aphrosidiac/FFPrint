@@ -15,6 +15,7 @@ import * as U from '@/stores/undo'
 import * as PM from '@/stores/pastModels'
 import { app, cancelSlice, currentFilament, openPaths, recordJob, reprint, runSlice } from '@/stores/app'
 import { clearScene, meshes, scene, toProject, type SceneObject } from '@/stores/scene'
+import { ws } from '@/viewport/workspace'
 
 type Args = Record<string, any>
 type Handler = (args: Args) => Promise<unknown> | unknown
@@ -152,6 +153,10 @@ const handlers: Record<string, Handler> = {
     if (app.mode === 'preview' && ['iso', 'top', 'front', 'fit'].includes(view)) P.setPreviewView(view)
     else V.setCameraView(view)
     return { view, mode: app.mode }
+  },
+  set_plate_visible: ({ visible }) => {
+    V.setPlateVisible(!!visible)
+    return { plate: ws.plate }
   },
 
   // ---- settings

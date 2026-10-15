@@ -2,13 +2,13 @@
 import { canRedo, canUndo, redo, undo } from '@/stores/undo'
 // Prepare mode's 3D workspace: the bed, the parts, camera views, tools, keyboard and context menu.
 import { onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
-import { ArrowDownToLine, BoxSelect, Copy, FolderOpen, LayoutGrid, Move, Redo2, Rotate3d, Scale3d, Scan, Trash2, Crosshair, ArrowDownFromLine, Undo2 } from 'lucide-vue-next'
+import { ArrowDownToLine, BoxSelect, SquareDashed, Copy, FolderOpen, LayoutGrid, Move, Redo2, Rotate3d, Scale3d, Scan, Trash2, Crosshair, ArrowDownFromLine, Undo2 } from 'lucide-vue-next'
 import { app, openDialog } from '@/stores/app'
 import { hasObjects, meshes, scene, selected } from '@/stores/scene'
 import IconButton from '@/ui/IconButton.vue'
 import ViewIcon from './ViewIcon.vue'
 import { Workspace3D, type ContextMenuRequest } from './scene3d'
-import { arrangeAll, centreOnBed, clearSelection, deleteObjects, dropToBed, duplicateObjects, selectAll, setCameraView, setLayFlatMode, setTool } from './actions'
+import { arrangeAll, centreOnBed, clearSelection, deleteObjects, dropToBed, duplicateObjects, selectAll, setCameraView, setLayFlatMode, setPlateVisible, setTool } from './actions'
 import * as actions from './actions'
 import { captureThumbnail } from './capture'
 import { viewBridge, ws, type Tool, type View } from './workspace'
@@ -68,6 +68,12 @@ onBeforeUnmount(() => {
 watch(
   () => [app.settings.supports, app.settings.supportAngle, view.value] as const,
   ([mode, angle, w]) => w?.setOverhangShading(mode !== 'off', angle),
+  { immediate: true }
+)
+
+watch(
+  () => [ws.plate, view.value] as const,
+  ([on, w]) => w?.setPlateVisible(on),
   { immediate: true }
 )
 
@@ -192,6 +198,9 @@ function run(action: () => void): void {
         <span class="sep" />
         <IconButton size="sm" :label="selected.length ? 'Fit selection (F)' : 'Fit bed (F)'" @click="fit">
           <Scan />
+        </IconButton>
+        <IconButton size="sm" :label="ws.plate ? 'Hide plate (P)' : 'Show plate (P)'" :active="!ws.plate" @click="setPlateVisible(!ws.plate)">
+          <SquareDashed />
         </IconButton>
       </div>
     </div>

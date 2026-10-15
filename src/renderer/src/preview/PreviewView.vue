@@ -2,7 +2,7 @@
 // Preview mode: the sliced toolpaths on the bed, a layer range slider on the right, the feature
 // legend bottom-left and view presets top-right, in the same place and style as Prepare's.
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { Scan } from 'lucide-vue-next'
+import { Scan, SquareDashed } from 'lucide-vue-next'
 import ViewIcon from '@/viewport/ViewIcon.vue'
 import { app, blockingIssues, runSlice } from '@/stores/app'
 import Button from '@/ui/Button.vue'
@@ -12,6 +12,8 @@ import Legend from './Legend.vue'
 import { currentParse, isFeatureVisible, loadPreview, preview } from './state'
 import { PreviewScene } from './toolpaths'
 import { setPreviewView, type PreviewView } from './actions'
+import { setPlateVisible } from '@/viewport/actions'
+import { ws } from '@/viewport/workspace'
 
 const host = ref<HTMLElement>()
 let view: PreviewScene | null = null
@@ -37,6 +39,7 @@ function build(): void {
 onMounted(() => {
   if (!host.value) return
   view = new PreviewScene(host.value)
+  view.setPlateVisible(ws.plate)
   ;(window as unknown as { __ffPreview: unknown }).__ffPreview = { preview, view }
   if (result.value) loadPreview(result.value)
   build()
@@ -69,6 +72,11 @@ watch(
 )
 
 watch(
+  () => ws.plate,
+  (on) => view?.setPlateVisible(on)
+)
+
+watch(
   () => preview.viewSeq,
   () => view?.setView(preview.view)
 )
@@ -90,6 +98,7 @@ const setView = (v: PreviewView): void => setPreviewView(v)
       <IconButton size="sm" label="Front view" :active="activeView === 'front'" @click="setView('front')"><ViewIcon view="front" /></IconButton>
       <span class="sep" />
       <IconButton size="sm" label="Fit to the print" @click="setView('fit')"><Scan /></IconButton>
+      <IconButton size="sm" :label="ws.plate ? 'Hide plate (P)' : 'Show plate (P)'" :active="!ws.plate" @click="setPlateVisible(!ws.plate)"><SquareDashed /></IconButton>
     </div>
 
     <div v-if="result && stale" class="banner">Preview is from the previous slice</div>

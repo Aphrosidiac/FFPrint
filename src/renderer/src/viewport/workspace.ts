@@ -10,7 +10,10 @@ export type CameraView = View | 'fit' | 'fit-selection'
 export const ws = reactive({
   tool: 'move' as Tool,
   /** "Lay on face" pick mode: the next click on a face lays it on the bed */
-  layFlat: false
+  layFlat: false,
+  /** the build plate (sheet, markings, grid) is drawn; off = see a part's underside from below.
+   *  Prepare and Preview share it. Not saved: every launch starts with the plate shown. */
+  plate: true
 })
 
 /** Camera actions, registered by the mounted viewport (no-ops while it is not mounted). */

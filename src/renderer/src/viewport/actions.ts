@@ -322,6 +322,11 @@ export function setLayFlatMode(on: boolean): void {
   ws.layFlat = on
 }
 
+/** Shows or hides the build plate in Prepare and Preview, to see a part's underside from below. */
+export function setPlateVisible(on: boolean): void {
+  ws.plate = on
+}
+
 // ------------------------------------------------------------------ add / remove / copy
 
 function footprintFree(box: Box3, others: SceneObject[]): boolean {

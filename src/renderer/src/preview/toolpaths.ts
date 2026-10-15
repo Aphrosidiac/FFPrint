@@ -184,6 +184,11 @@ export class PreviewScene {
     this.setView('iso')
   }
 
+  setPlateVisible(on: boolean): void {
+    this.bed.setPlateVisible(on)
+    this.requestRender()
+  }
+
   applyTheme(): void {
     const c = readColors()
     this.scene.background = c.background

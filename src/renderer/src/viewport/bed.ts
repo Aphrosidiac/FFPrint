@@ -59,6 +59,9 @@ function loadBytes(url: string): Promise<ArrayBuffer> {
 export interface Bed {
   group: Group
   applyColors(c: ViewColors): void
+  /** Hides the solid plate, its markings and the grid (to look at a part from below). The printable-area
+   *  edge, build volume and origin stay as a reference. */
+  setPlateVisible(on: boolean): void
   dispose(): void
 }
 
@@ -72,6 +75,9 @@ export function createBed(onLoaded: () => void): Bed {
   plate.position.set(BX / 2, BY / 2, 0)
   plate.renderOrder = -3
   plate.visible = false
+  let shown = true
+  let plateLoaded = false
+  let marksLoaded = false
   loadBytes(bedStlUrl)
     .then((buf) => {
       const g = new STLLoader().parse(buf)
@@ -79,7 +85,8 @@ export function createBed(onLoaded: () => void): Bed {
       g.computeVertexNormals()
       plate.geometry.dispose()
       plate.geometry = g
-      plate.visible = true
+      plateLoaded = true
+      plate.visible = shown
       onLoaded()
     })
     .catch(() => {
@@ -107,7 +114,8 @@ export function createBed(onLoaded: () => void): Bed {
     tex.magFilter = LinearFilter
     marksMat.map = tex
     marksMat.needsUpdate = true
-    marks.visible = true
+    marksLoaded = true
+    marks.visible = shown
     onLoaded()
   })
 
@@ -159,6 +167,14 @@ export function createBed(onLoaded: () => void): Bed {
       set(edge, c.plateEdge, 1)
       set(volume, c.edge, c.dark ? 0.4 : 0.35)
       ;(origin.material as LineBasicMaterial).color.copy(c.accent)
+    },
+    setPlateVisible(on) {
+      shown = on
+      plate.visible = on && plateLoaded
+      marks.visible = on && marksLoaded
+      surface.visible = on
+      minorLines.visible = on
+      majorLines.visible = on
     },
     dispose() {
       marksMat.map?.dispose()
