@@ -107,6 +107,8 @@ export interface SettingDef {
   options?: { value: string; label: string }[]
   /** Clamp a number to a machine/firmware limit at resolve time */
   limit?: (l: MachineLimits) => number
+  /** Enum values never sliced on this printer: what is used instead, and why */
+  refuse?: Record<string, { use: string; why: string }>
 }
 
 const accel = (l: MachineLimits): number => l.accelExtruding
@@ -120,7 +122,7 @@ export const CATALOGUE: SettingDef[] = [
   { key: 'initial_layer_print_height', target: 'process', group: 'Layers & walls', label: 'First layer height', help: "How thick the very first layer is. Thicker sticks better and forgives a slightly uneven bed; too thick and the bottom looks rough.", kind: 'number', unit: 'mm', min: 0.1, max: 0.4, step: 0.02 },
   { key: 'wall_generator', target: 'process', group: 'Layers & walls', label: 'Wall generator', help: "How walls are laid out. Arachne varies the line width so thin parts and lettering come out complete; Classic keeps every line the same width.", kind: 'enum', options: [{ value: 'arachne', label: 'Arachne' }, { value: 'classic', label: 'Classic' }] },
   { key: 'wall_sequence', target: 'process', group: 'Layers & walls', label: 'Wall order', help: "Which wall is printed first on each layer. Inner first gives a cleaner outside; outer first gives more exact sizes but can sag on overhangs.", kind: 'enum', options: [{ value: 'inner wall/outer wall', label: 'Inner, then outer' }, { value: 'outer wall/inner wall', label: 'Outer, then inner' }, { value: 'inner-outer-inner wall', label: 'Inner, outer, inner' }] },
-  { key: 'seam_position', target: 'process', group: 'Layers & walls', label: 'Seam position', help: "Where each layer starts and ends, which leaves a small bump. Aligned or Back stacks the bumps into one neat line; Random scatters them so no line shows.", kind: 'enum', options: [{ value: 'aligned', label: 'Aligned' }, { value: 'nearest', label: 'Nearest' }, { value: 'back', label: 'Back' }, { value: 'random', label: 'Random' }] },
+  { key: 'seam_position', target: 'process', group: 'Layers & walls', label: 'Seam position', help: "Where each layer starts and ends, which leaves a small bump. Aligned or Back stacks the bumps into one neat line, in a corner where it can. Random is not offered: without pressure advance the V3 SE leaves a bump at every start, so Random covers tall walls in them.", kind: 'enum', options: [{ value: 'aligned', label: 'Aligned' }, { value: 'nearest', label: 'Nearest' }, { value: 'back', label: 'Back' }], refuse: { random: { use: 'aligned', why: 'without pressure advance the V3 SE leaves a bump at every layer start, so a random seam scatters them all over the walls' } } },
   { key: 'only_one_wall_top', target: 'process', group: 'Layers & walls', label: 'Single wall on top surfaces', help: "Uses a single wall on the topmost layer so the flat top gets more smooth fill. Usually improves flat tops; turn off if top edges look weak.", kind: 'bool' },
   { key: 'detect_thin_wall', target: 'process', group: 'Layers & walls', label: 'Detect thin walls', help: "Prints walls too thin for two lines as one line instead of leaving them out. Turn on if thin fins or text go missing.", kind: 'bool' },
   { key: 'elefant_foot_compensation', target: 'process', group: 'Layers & walls', label: "Elephant's foot compensation", help: "Pulls the first layer in slightly to cancel the outward bulge at the base (\"elephant's foot\"). Raise it if the bottom edge flares; too much leaves a groove at the base.", kind: 'number', unit: 'mm', min: 0, max: 1, step: 0.05 },
@@ -293,7 +295,8 @@ export function resolveOverrides(s: PrintSettings, f: Filament, m: MachineSettin
 
   for (const [key, raw] of Object.entries(s.overrides)) {
     const def = CATALOGUE_BY_KEY.get(key)
-    const value = clamp(def, raw, limits)
+    // Older projects and history jobs can still carry a refused value (seam: random).
+    const value = def?.refuse?.[raw]?.use ?? clamp(def, raw, limits)
     const target = def?.target ?? 'process'
     if (target === 'process') process[key] = value
     else if (target === 'filament') filament[key] = value

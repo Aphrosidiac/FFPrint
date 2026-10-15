@@ -113,6 +113,8 @@ export function setOverride(key: string, value: string | number | boolean): stri
     encoded = encodeValue(def, b)
   } else if (def.kind === 'enum') {
     const v = String(value)
+    const refused = def.refuse?.[v.toLowerCase()]
+    if (refused) fail(`${def.label} "${v}" is not used on this printer: ${refused.why}. Use ${refused.use}.`)
     const opt = def.options?.find((o) => o.value === v || o.label.toLowerCase() === v.toLowerCase())
     if (!opt) fail(`${def.label} must be one of: ${def.options?.map((o) => o.value).join(', ')}.`)
     encoded = opt!.value

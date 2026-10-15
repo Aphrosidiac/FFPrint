@@ -35,10 +35,10 @@ const reset = (): void => resetOverride(props.def.key)
 
 const num = computed({ get: () => decodeNumber(raw.value), set: (v: number) => set(v) })
 const bool = computed({ get: () => decodeBool(raw.value), set: (v: boolean) => set(v) })
-const choice = computed({ get: () => raw.value ?? '', set: (v: string) => set(v) })
+const choice = computed({ get: () => (raw.value && props.def.refuse?.[raw.value]?.use) || (raw.value ?? ''), set: (v: string) => set(v) })
 const options = computed(() => {
   const opts = props.def.options ?? []
-  return raw.value && !opts.some((o) => o.value === raw.value) ? [...opts, { value: raw.value, label: raw.value }] : opts
+  return choice.value && !opts.some((o) => o.value === choice.value) ? [...opts, { value: choice.value, label: choice.value }] : opts
 })
 
 const firmwareNote = computed(() => (props.def.limit && limits.value ? `Firmware maximum: ${props.def.limit(limits.value)} ${props.def.unit ?? ''}`.trim() : ''))
