@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Add / edit one library filament. Works on a copy; nothing is saved until Save.
 import { computed, ref, watch } from 'vue'
-import { MATERIALS, filamentDefaults, newFilament, validateFilament } from '@shared/settings'
+import { DEFAULT_PRICE_PER_KG, MATERIALS, filamentDefaults, newFilament, validateFilament } from '@shared/settings'
 import type { Filament, Material } from '@shared/types'
 import { app } from '@/stores/app'
 import Button from '@/ui/Button.vue'
@@ -24,7 +24,7 @@ watch(
 )
 
 function blank(): Filament {
-  return { id: '', name: '', brand: '', material: 'PLA', color: '#ffffff', ...filamentDefaults('PLA'), pricePerKg: 75, notes: '' }
+  return { id: '', name: '', brand: '', material: 'PLA', color: '#ffffff', ...filamentDefaults('PLA'), pricePerKg: DEFAULT_PRICE_PER_KG, notes: '' }
 }
 
 const materialOptions = MATERIALS.map((m) => ({ value: m.id, label: m.label }))

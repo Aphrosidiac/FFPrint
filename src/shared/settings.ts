@@ -510,6 +510,9 @@ export function validateFilament(f: Filament): Record<string, string> {
 
 export const MATERIAL_COLORS: Record<Material, string> = { PLA: '#f2f2f0', 'PLA-HS': '#3a3a3c', PETG: '#2f6fdb', TPU: '#e0533d', ABS: '#e8b931', ASA: '#6b7280' }
 
+/** Price per kg a new filament starts with (RM), until Fakhrul enters what he paid. */
+export const DEFAULT_PRICE_PER_KG = 50
+
 /**
  * A new library entry (no id yet). Numbers come from a spool of the same material already in the
  * library, else from Orca's Creality generic profile for the material; `partial` wins over both.
@@ -520,6 +523,6 @@ export function newFilament(library: Filament[], partial: Partial<Filament> = {}
   const like = library.find((x) => x.material === material)
   const base: Filament = like
     ? { ...like }
-    : { id: '', name: '', brand: 'Generic', material, color: MATERIAL_COLORS[material], ...filamentDefaults(material), pricePerKg: 75, notes: '' }
+    : { id: '', name: '', brand: 'Generic', material, color: MATERIAL_COLORS[material], ...filamentDefaults(material), pricePerKg: DEFAULT_PRICE_PER_KG, notes: '' }
   return { ...base, id: '', name: `New ${label}`, notes: '', ...partial, material }
 }

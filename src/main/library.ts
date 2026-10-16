@@ -2,7 +2,7 @@
 
 import { randomUUID } from 'node:crypto'
 import { DEFAULT_END_GCODE, DEFAULT_START_GCODE, MACHINE } from '@shared/machine'
-import { MATERIALS } from '@shared/settings'
+import { DEFAULT_PRICE_PER_KG, MATERIALS } from '@shared/settings'
 import type { Filament, MachineSettings, Material, Prefs, PrintSettings, Setup } from '@shared/types'
 import seeds from '@shared/filament-seeds.json'
 import { filamentBase, first } from './engine/profiles'
@@ -45,7 +45,7 @@ export function filamentFromMaterial(material: Material, name?: string): Filamen
     fanMax: first(base.fan_max_speed, 100),
     density: first(base.filament_density, 1.24),
     diameter: first(base.filament_diameter, 1.75),
-    pricePerKg: 75,
+    pricePerKg: DEFAULT_PRICE_PER_KG,
     notes: ''
   }
 }

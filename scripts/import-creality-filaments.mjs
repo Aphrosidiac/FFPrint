@@ -57,7 +57,7 @@ for (const [name] of byName) {
     fanMax: first(p.fan_max_speed, 100),
     density: first(p.filament_density, 1.24),
     diameter: first(p.filament_diameter, 1.75),
-    pricePerKg: 75,
+    pricePerKg: 50,
     notes: '',
     source: { preset: name, filament_type: str(p.filament_type), pressure_advance: str(p.pressure_advance), filament_cost: str(p.filament_cost) }
   })
