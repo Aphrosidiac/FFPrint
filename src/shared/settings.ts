@@ -174,6 +174,7 @@ export const CATALOGUE: SettingDef[] = [
   { key: 'support_object_xy_distance', target: 'process', group: 'Supports', label: 'Side gap', help: "Gap between supports and the side of the part. Bigger is easier to remove; too big and edges are left unsupported.", kind: 'number', unit: 'mm', min: 0, max: 2, step: 0.05 },
   { key: 'support_interface_top_layers', target: 'process', group: 'Supports', label: 'Interface layers', help: "Dense layers at the top of the support, right under the part. More gives a smoother underside but can be harder to peel off.", kind: 'number', unit: 'layers', min: 0, max: 5, step: 1 },
   { key: 'tree_support_branch_angle', target: 'process', group: 'Supports', label: 'Tree branch angle', help: "How far tree branches may lean to reach an overhang. Higher reaches further with fewer trunks, but branches are weaker.", kind: 'number', unit: '°', min: 10, max: 60, step: 5 },
+  { key: 'tree_support_branch_diameter_angle', target: 'process', group: 'Supports', label: 'Tree trunk thickening', help: "How much tree trunks widen as they go down to the bed. Lower makes slimmer trunks that use less filament and time on tall prints; too low and tall trunks can wobble or snap.", kind: 'number', unit: '°', min: 0, max: 15, step: 0.5 },
 
   // Adhesion
   { key: 'brim_object_gap', target: 'process', group: 'Adhesion', label: 'Brim gap', help: "A small gap between brim and part so the brim peels off cleanly. Zero holds hardest but is harder to remove.", kind: 'number', unit: 'mm', min: 0, max: 1, step: 0.05 },
