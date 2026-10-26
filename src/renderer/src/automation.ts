@@ -208,7 +208,7 @@ const handlers: Record<string, Handler> = {
   },
   save_filament: async ({ filament }) => {
     const f = filament as Partial<Filament> & { id?: string }
-    return f.id ? S.updateFilament(f.id, f) : S.createFilament(f)
+    return plain(await (f.id ? S.updateFilament(f.id, f) : S.createFilament(f)))
   },
   delete_filament: async ({ id }) => {
     await S.deleteFilament(id)
